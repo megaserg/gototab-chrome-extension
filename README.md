@@ -15,7 +15,7 @@ To customize the shortcut, go to `chrome://extensions`, scroll to the bottom and
 
 ## TODO
 - Support search in URLs
-- Support Up/Down keys to move the selection
+- Proper MVC in JS
 - Support [fuzzy search](http://en.wikipedia.org/wiki/Approximate_string_matching#Problem_formulation_and_algorithms)
 - Make the popup appear in the center of the screen (?)
 - Tweak colors

@@ -11,15 +11,15 @@ function getTabs(processTabs) {
   };
 
   chrome.tabs.query(queryInfo, processTabs);
-}
+};
 
 var getSearchInput = function() {
   return document.getElementById("searchInput");
-}
+};
 
 var getTabListDiv = function() {
   return document.getElementById("tabListDiv");
-}
+};
 
 var setFocusOnInput = function() {
   getSearchInput().focus();
@@ -29,16 +29,15 @@ var renderTabList = function(html) {
   getTabListDiv().innerHTML = html;
 };
 
-var drawTabs = function(tabs) {
+var drawTabs = function(tabs, highlightedTabIndex) {
   var n = tabs.length;
 
   var listhtml = "";
   for (var i = 0; i < n; i++) {
-    listhtml +=
-      "<div>" +
-      "<img src='" + tabs[i].favIconUrl + "' class='favicon' />" +
-      tabs[i].title +
-      "</div>";
+    listhtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
+    listhtml += "<img src='" + tabs[i].favIconUrl + "' class='favicon' />";
+    listhtml += tabs[i].title;
+    listhtml += "</div>";
   }
 
   renderTabList(listhtml);
@@ -50,61 +49,111 @@ var filterTabs = function(tabs, query) {
     return tab.title.toLowerCase().indexOf(lowercaseQuery) != -1;
   });
   return filteredTabs;
-}
-
-var drawFilteredTabs = function(tabs, query) {
-  drawTabs(filterTabs(tabs, query));
 };
-
 
 var gotoTab = function(tab) {
   chrome.tabs.update(tab.id, {active: true});
   chrome.windows.update(tab.windowId, {focused: true});
-}
+};
 
 /**
  * Wires up the function to react on the input.
  *
- * @param {function(event)} processTextValue
+ * @param {function(event)} processInput
  *   Called when user inputs something.
  * @param {function(event)} processEnter
  *   Called when user presses Enter.
+ * @param {function(event)} processUpArrow
+ *   Called when user presses Up.
+ * @param {function(event)} processDownArrow
+ *   Called when user presses Down.
  */
-var wireOnChangeListener = function(processTextValue, processEnter) {
-  var onChange = function(event) {
+var wireOnChangeListener = function(
+    processInput,
+    processEnter,
+    processUpArrow,
+    processDownArrow) {
+
+  var processEdit = function(event) {
+    var key = event.keyCode;
+    if (key != 13 && key != 38 && key != 40) { // not a functional key
+      processInput(event);
+    }
+  };
+
+  var processFunctionalKeys = function(event) {
     if (event.keyCode == 13) { // Enter key
       processEnter(event);
-    } else {
-      processTextValue(event);
+    } else if (event.keyCode == 38) { // Up arrow key
+      processUpArrow(event);
+    } else if (event.keyCode == 40) { // Down arrow key
+      processDownArrow(event);
     }
-  }
+  };
 
-  // TODO: is keyup the correct event?
-  getSearchInput().addEventListener("keyup", onChange, false);
+  // For character keys, keyup should be used so that text field value is changed.
+  getSearchInput().addEventListener("keyup", processEdit, false);
+  // For keys like Enter and arrows, keydown feels more responsive.
+  getSearchInput().addEventListener("keydown", processFunctionalKeys, false);
 };
+
+var refreshView = function() {
+  drawTabs(tabsToDisplay, highlightedTabIndex);
+};
+
+// Global state
+var tabsToDisplay = [];
+var highlightedTabIndex = -1;
+
+var setTabsToDisplay = function(tabs) {
+  tabsToDisplay = tabs;
+  if (tabs.length > 0) {
+    highlightedTabIndex = 0;
+  } else {
+    highlightedTabIndex = -1;
+  }
+  refreshView();
+};
+
+var setHighlightedTabIndex = function(index) {
+  highlightedTabIndex = index;
+  refreshView();
+}
 
 document.addEventListener("DOMContentLoaded", function() {
   getTabs(function(tabs) {
 
-    var processText = function(event) {
+    var processInput = function(event) {
       var query = getSearchInput().value;
-      drawFilteredTabs(tabs, query);
+      setTabsToDisplay(filterTabs(tabs, query));
     };
 
     var processEnter = function(event) {
-      var query = getSearchInput().value;
-
-      // TODO: instead, open the currently highlighted tab
-      var filteredTabs = filterTabs(tabs, query);
-      if (filteredTabs.length > 0) {
-        gotoTab(filteredTabs[0]);
+      if (highlightedTabIndex != -1) {
+        gotoTab(tabsToDisplay[highlightedTabIndex]);
       }
     };
 
-    wireOnChangeListener(processText, processEnter);
+    var processUpArrow = function(event) {
+      if (tabsToDisplay.length > 0) {
+        if (highlightedTabIndex - 1 >= 0) {
+          setHighlightedTabIndex(highlightedTabIndex - 1);
+        }
+      }
+    };
+
+    var processDownArrow = function(event) {
+      if (tabsToDisplay.length > 0) {
+        if (highlightedTabIndex + 1 < tabsToDisplay.length) {
+          setHighlightedTabIndex(highlightedTabIndex + 1);
+        }
+      }
+    };
+
+    wireOnChangeListener(processInput, processEnter, processUpArrow, processDownArrow);
 
     setFocusOnInput();
 
-    drawTabs(tabs);
+    setTabsToDisplay(tabs);
   });
 });

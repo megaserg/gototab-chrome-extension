@@ -24,7 +24,7 @@ input.searchbox {
   padding: 0px 0px 2px 3px;
 }
 
-#tabListDiv > div:first-child {
+#tabListDiv > div.highlighted {
   background-color: orange;
   color: white;
 }
