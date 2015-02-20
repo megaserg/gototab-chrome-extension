@@ -36,7 +36,9 @@ var drawTabs = function(tabs, highlightedTabIndex) {
   for (var i = 0; i < n; i++) {
     listhtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
     listhtml += "<img src='" + tabs[i].favIconUrl + "' class='favicon' />";
-    listhtml += tabs[i].title;
+    listhtml += "<span class='title'>" + tabs[i].title + "</span>";
+    listhtml += "<br />";
+    listhtml += "<span class='url'>" + tabs[i].url + "</span>";
     listhtml += "</div>";
   }
 
