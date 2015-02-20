@@ -44,10 +44,20 @@ var drawTabs = function(tabs, highlightedTabIndex) {
 };
 
 var filterTabs = function(tabs, query) {
-  var lowercaseQuery = query.toLowerCase();
-  var filteredTabs = tabs.filter(function(tab) {
-    return tab.title.toLowerCase().indexOf(lowercaseQuery) != -1;
-  });
+  var containsCaseInsensitive = function(substring) {
+    var lowercaseSubstr = substring.toLowerCase();
+    return function(string) {
+      return string.toLowerCase().indexOf(lowercaseSubstr) != -1;
+    };
+  };
+
+  var containsQuery = containsCaseInsensitive(query);
+
+  var predicate = function(tab) {
+    return containsQuery(tab.title) || containsQuery(tab.url);
+  };
+
+  var filteredTabs = tabs.filter(predicate);
   return filteredTabs;
 };
 
