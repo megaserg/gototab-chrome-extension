@@ -7,16 +7,16 @@ Chrome extension analogous to Sublime/Atom Command Palette.
 - Click "Load unpacked extension..." and choose gototab directory
 
 ## Usage
-- Press Cmd+Shift+E to bring up the popup
+- Press <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> on Mac (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> on PC) to bring up the popup
 - Type the search term
-- Press Enter. The topmost tab should become active.
+- (Optionally) Press <kbd>Up</kbd>/<kbd>Down</kbd> to move the highlighting
+- Press Enter. The highlighted tab should become active.
 
 To customize the shortcut, go to `chrome://extensions`, scroll to the bottom and click "Keyboard shortcuts".
 
 ## TODO
-- Support search in URLs
 - Proper MVC in JS
-- Make the matching substring bold or something
 - Support [fuzzy search](http://en.wikipedia.org/wiki/Approximate_string_matching#Problem_formulation_and_algorithms)
-- Make the popup appear in the center of the screen (?)
+- Make the matching substring bold or something
 - Tweak colors
+- Make the popup appear in the center of the screen (?)
