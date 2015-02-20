@@ -16,6 +16,7 @@ To customize the shortcut, go to `chrome://extensions`, scroll to the bottom and
 ## TODO
 - Support search in URLs
 - Proper MVC in JS
+- Make the matching substring bold or something
 - Support [fuzzy search](http://en.wikipedia.org/wiki/Approximate_string_matching#Problem_formulation_and_algorithms)
 - Make the popup appear in the center of the screen (?)
 - Tweak colors

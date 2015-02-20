@@ -11,17 +11,28 @@ input.searchbox {
 }
 
 #tabListDiv {
-  /* avoid an excessively wide status text */
-  white-space: pre;
-  text-overflow: ellipsis;
-  overflow: hidden;
+  /* small offset from the input field */
+  margin-top: 5px;
+
+  /* provide fixed list width */
   width: 500px;
-  padding-top: 5px;
+
+  /* limit the list height, so vertical scroll appears on div and not on body */
+  overflow-x: hidden;
+  max-height: 500px;
 }
 
 #tabListDiv > div {
+  /* avoid an excessively wide item text */
+  white-space: pre;
+  text-overflow: ellipsis;
+  overflow-x: hidden;
+
   border-radius: 5px;
   padding: 0px 0px 2px 3px;
+
+  /* small offset from the scrollbar */
+  margin-right: 10px;
 }
 
 #tabListDiv > div .title {
@@ -43,8 +54,23 @@ input.searchbox {
 
 img.favicon {
   position: relative;
+  top: 2px;
+
   width: 16px;
   height: 16px;
-  top: 2px;
   margin-right: 4px;
+}
+
+/* Styling scrollbar */
+#tabListDiv::-webkit-scrollbar {
+    width: 7px;
+}
+#tabListDiv::-webkit-scrollbar-track {
+    background-color: #99BBFF;
+}
+#tabListDiv::-webkit-scrollbar-thumb {
+    background-color: #7799FF;
+}
+#tabListDiv::-webkit-scrollbar-thumb:hover {
+    background-color: #3355FF;
 }
