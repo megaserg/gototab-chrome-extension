@@ -1,7 +1,8 @@
 body {
   font-family: sans-serif;
   font-size: 100%;
-  background-color: #ADC7FF;
+  background-color: #F5F1DE;
+  /*background-color: #ADC7FF;*/
   padding: 5px;
 }
 
@@ -44,11 +45,12 @@ input.searchbox {
   position: relative;
   left: 22px;
   font-size: 60%;
-  color: #444444;
+  color: #666666;
 }
 
 #tabListDiv > div.highlighted {
-  background-color: orange;
+  background-color: #CBBDB0;
+  /*background-color: orange;*/
   color: white;
 }
 
@@ -63,14 +65,17 @@ img.favicon {
 
 /* Styling scrollbar */
 #tabListDiv::-webkit-scrollbar {
-    width: 7px;
+  width: 7px;
 }
 #tabListDiv::-webkit-scrollbar-track {
-    background-color: #99BBFF;
+  background-color: #D5C1BE;
+  /*background-color: #99BBFF;*/
 }
 #tabListDiv::-webkit-scrollbar-thumb {
-    background-color: #7799FF;
+  background-color: #A5918E;
+  /*background-color: #7799FF;*/
 }
 #tabListDiv::-webkit-scrollbar-thumb:hover {
-    background-color: #3355FF;
+  background-color: #85716E;
+  /*background-color: #3355FF;*/
 }
