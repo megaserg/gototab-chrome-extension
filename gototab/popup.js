@@ -36,7 +36,9 @@ var drawTabs = function(tabs, highlightedTabIndex) {
   for (var i = 0; i < n; i++) {
     listhtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
     listhtml += "<img src='" + tabs[i].favIconUrl + "' class='favicon' />";
-    listhtml += tabs[i].title;
+    listhtml += "<span class='title'>" + tabs[i].title + "</span>";
+    listhtml += "<br />";
+    listhtml += "<span class='url'>" + tabs[i].url + "</span>";
     listhtml += "</div>";
   }
 
@@ -44,10 +46,20 @@ var drawTabs = function(tabs, highlightedTabIndex) {
 };
 
 var filterTabs = function(tabs, query) {
-  var lowercaseQuery = query.toLowerCase();
-  var filteredTabs = tabs.filter(function(tab) {
-    return tab.title.toLowerCase().indexOf(lowercaseQuery) != -1;
-  });
+  var containsCaseInsensitive = function(substring) {
+    var lowercaseSubstr = substring.toLowerCase();
+    return function(string) {
+      return string.toLowerCase().indexOf(lowercaseSubstr) != -1;
+    };
+  };
+
+  var containsQuery = containsCaseInsensitive(query);
+
+  var predicate = function(tab) {
+    return containsQuery(tab.title) || containsQuery(tab.url);
+  };
+
+  var filteredTabs = tabs.filter(predicate);
   return filteredTabs;
 };
 
