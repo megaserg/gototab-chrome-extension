@@ -1,17 +1,8 @@
-/**
- * Gets all tabs.
- *
- * @param {function(array[Tab])} processTabs
- *   Called with the list of tabs.
- */
-function getTabs(processTabs) {
-  var queryInfo = {
-    // To limit the search to the current window, uncomment the following line.
-    // currentWindow: true
-  };
+/////////////////////////
+// View functions
+/////////////////////////
 
-  chrome.tabs.query(queryInfo, processTabs);
-};
+// TODO: these functions should be inside one View object.
 
 var getSearchInput = function() {
   return document.getElementById("searchInput");
@@ -25,24 +16,110 @@ var setFocusOnInput = function() {
   getSearchInput().focus();
 };
 
-var renderTabList = function(html) {
+var displayTabsHtml = function(html) {
   getTabListDiv().innerHTML = html;
 };
 
-var drawTabs = function(tabs, highlightedTabIndex) {
+var gotoTab = function(tab) {
+  chrome.tabs.update(tab.id, {active: true});
+  chrome.windows.update(tab.windowId, {focused: true});
+};
+
+/////////////////////////
+// View helpers
+/////////////////////////
+
+var renderTabsToHtml = function(tabs, highlightedTabIndex) {
   var n = tabs.length;
 
-  var listhtml = "";
+  var listHtml = "";
   for (var i = 0; i < n; i++) {
-    listhtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
-    listhtml += "<img src='" + tabs[i].favIconUrl + "' class='favicon' />";
-    listhtml += "<span class='title'>" + tabs[i].title + "</span>";
-    listhtml += "<br />";
-    listhtml += "<span class='url'>" + tabs[i].url + "</span>";
-    listhtml += "</div>";
+    listHtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
+    listHtml += "<img src='" + tabs[i].favIconUrl + "' class='favicon' />";
+    listHtml += "<span class='title'>" + tabs[i].title + "</span>";
+    listHtml += "<br />";
+    listHtml += "<span class='url'>" + tabs[i].url + "</span>";
+    listHtml += "</div>";
   }
 
-  renderTabList(listhtml);
+  return listHtml;
+};
+
+var refreshView = function() {
+  displayTabsHtml(renderTabsToHtml(tabsToDisplay, highlightedTabIndex));
+};
+
+
+/////////////////////////
+// Model
+/////////////////////////
+
+/*
+ * TODO: ideally, model should not be calling refreshView, but rather
+ * broadcast an event "I, model, have changed". Controller should listen
+ * to this event and update view whenever it comes.
+ */
+var model = {
+  // private
+
+  tabsToDisplay: [],
+
+  highlightedTabIndex: 0,
+
+  isValidIndex: function(index) {
+    return 0 <= index && index < tabsToDisplay.length;
+  },
+
+  // public
+
+  hasTabs: function() {
+    return tabsToDisplay.length > 0;
+  },
+
+  setTabsToDisplay: function(tabs) {
+    tabsToDisplay = tabs;
+    highlightedTabIndex = 0;
+    refreshView();
+  },
+
+  decrementIndexIfPossible: function() {
+    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex - 1)) {
+      highlightedTabIndex--;
+      refreshView();
+    }
+  },
+
+  incrementIndexIfPossible: function() {
+    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex + 1)) {
+      highlightedTabIndex++;
+      refreshView();
+    }
+  },
+
+  getHighlightedTab: function() {
+    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex)) {
+      return tabsToDisplay[highlightedTabIndex];
+    }
+  },
+};
+
+/////////////////////////
+// Business logic
+/////////////////////////
+
+/**
+ * Gets all tabs.
+ *
+ * @param {function(array[Tab])} processTabs
+ *   Called with the list of tabs.
+ */
+var asyncGetTabs = function(processTabs) {
+  var queryInfo = {
+    // To limit the search to the current window, uncomment the following line.
+    // currentWindow: true
+  };
+
+  chrome.tabs.query(queryInfo, processTabs);
 };
 
 var filterTabs = function(tabs, query) {
@@ -59,113 +136,95 @@ var filterTabs = function(tabs, query) {
     return containsQuery(tab.title) || containsQuery(tab.url);
   };
 
-  var filteredTabs = tabs.filter(predicate);
-  return filteredTabs;
+  return tabs.filter(predicate);
 };
 
-var gotoTab = function(tab) {
-  chrome.tabs.update(tab.id, {active: true});
-  chrome.windows.update(tab.windowId, {focused: true});
-};
+/////////////////////////
+// Controller functions
+/////////////////////////
 
 /**
- * Wires up the function to react on the input.
+ * Wires up the functions to react on the input.
  *
- * @param {function(event)} processInput
- *   Called when user inputs something.
- * @param {function(event)} processEnter
- *   Called when user presses Enter.
- * @param {function(event)} processUpArrow
- *   Called when user presses Up.
- * @param {function(event)} processDownArrow
- *   Called when user presses Down.
+ * @param {InputHTMLElement} input
+ *   Input element to react on.
+ * @param {function(event)} processKeyDown
+ *   Called when user pushes the key.
+ * @param {function(event)} processKeyUp
+ *   Called when user releases the key.
  */
-var wireOnChangeListener = function(
-    processInput,
-    processEnter,
-    processUpArrow,
-    processDownArrow) {
-
-  var processEdit = function(event) {
-    var key = event.keyCode;
-    if (key != 13 && key != 38 && key != 40) { // not a functional key
-      processInput(event);
-    }
-  };
-
-  var processFunctionalKeys = function(event) {
-    if (event.keyCode == 13) { // Enter key
-      processEnter(event);
-    } else if (event.keyCode == 38) { // Up arrow key
-      processUpArrow(event);
-    } else if (event.keyCode == 40) { // Down arrow key
-      processDownArrow(event);
-    }
-  };
-
-  // For character keys, keyup should be used so that text field value is changed.
-  getSearchInput().addEventListener("keyup", processEdit, false);
-  // For keys like Enter and arrows, keydown feels more responsive.
-  getSearchInput().addEventListener("keydown", processFunctionalKeys, false);
+var wireInputListeners = function(input, processKeyDown, processKeyUp) {
+  input.addEventListener("keydown", processKeyDown, false);
+  input.addEventListener("keyup", processKeyUp, false);
 };
 
-var refreshView = function() {
-  drawTabs(tabsToDisplay, highlightedTabIndex);
-};
-
-// Global state
-var tabsToDisplay = [];
-var highlightedTabIndex = -1;
-
-var setTabsToDisplay = function(tabs) {
-  tabsToDisplay = tabs;
-  if (tabs.length > 0) {
-    highlightedTabIndex = 0;
-  } else {
-    highlightedTabIndex = -1;
+var getMapping = function(map, key) {
+  var value = map[key];
+  if (typeof value == "undefined") {
+    value = map["default"];
   }
-  refreshView();
+  return value;
 };
 
-var setHighlightedTabIndex = function(index) {
-  highlightedTabIndex = index;
-  refreshView();
-}
+// TODO: have "all tabs" in the model?
+var wireInput = function(tabs) {
+  var processInput = function(event) {
+    var query = getSearchInput().value;
+    model.setTabsToDisplay(filterTabs(tabs, query));
+  };
 
-document.addEventListener("DOMContentLoaded", function() {
-  getTabs(function(tabs) {
+  var processEnter = function(event) {
+    if (model.hasTabs()) {
+      gotoTab(model.getHighlightedTab());
+    }
+  };
 
-    var processInput = function(event) {
-      var query = getSearchInput().value;
-      setTabsToDisplay(filterTabs(tabs, query));
-    };
+  var processUpArrow = function(event) {
+    model.decrementIndexIfPossible();
+  };
 
-    var processEnter = function(event) {
-      if (highlightedTabIndex != -1) {
-        gotoTab(tabsToDisplay[highlightedTabIndex]);
+  var processDownArrow = function(event) {
+    model.incrementIndexIfPossible();
+  };
+
+  var invokeByKeymap = function(keymap) {
+    return function(event) {
+      var handler = getMapping(keymap, event.keyCode);
+      if (handler) {
+        handler(event);
       }
     };
+  };
 
-    var processUpArrow = function(event) {
-      if (tabsToDisplay.length > 0) {
-        if (highlightedTabIndex - 1 >= 0) {
-          setHighlightedTabIndex(highlightedTabIndex - 1);
-        }
-      }
-    };
-
-    var processDownArrow = function(event) {
-      if (tabsToDisplay.length > 0) {
-        if (highlightedTabIndex + 1 < tabsToDisplay.length) {
-          setHighlightedTabIndex(highlightedTabIndex + 1);
-        }
-      }
-    };
-
-    wireOnChangeListener(processInput, processEnter, processUpArrow, processDownArrow);
-
-    setFocusOnInput();
-
-    setTabsToDisplay(tabs);
+  var processEdit = invokeByKeymap({
+    13: null, // Enter key
+    38: null, // Up arrow key
+    40: null, // Down arrow key
+    "default": processInput,
   });
-});
+
+  var processFunctionalKeys = invokeByKeymap({
+    13: processEnter, // Enter key
+    38: processUpArrow, // Up arrow key
+    40: processDownArrow, // Down arrow key
+    "default": null,
+  });
+
+  // For keys like Enter and arrows, keydown feels more responsive.
+  // For character keys, keyup should be used so that text field value is changed.
+  wireInputListeners(getSearchInput(), processFunctionalKeys, processEdit);
+};
+
+var processTabs = function(allTabs) {
+  model.setTabsToDisplay(allTabs);
+
+  wireInput(allTabs);
+
+  setFocusOnInput();
+};
+
+var onContentLoaded = function() {
+  asyncGetTabs(processTabs);
+};
+
+document.addEventListener("DOMContentLoaded", onContentLoaded);
