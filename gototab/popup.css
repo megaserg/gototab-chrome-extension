@@ -8,16 +8,19 @@ body {
 input.searchbox {
   font-size: 200%;
   width: 100%;
+
+  /* disable blue glow */
+  outline: none;
 }
 
 #tabListDiv {
   /* small offset from the input field */
   margin-top: 5px;
 
-  /* provide fixed list width */
+  /* fixed list width */
   width: 500px;
 
-  /* limit the list height, so vertical scroll appears on div and not on body */
+  /* limited height, so vertical scroll appears on div and not on body */
   overflow-x: hidden;
   max-height: 500px;
 }
@@ -54,7 +57,7 @@ input.searchbox {
 
 img.favicon {
   position: relative;
-  top: 2px;
+  top: 3px;
 
   width: 16px;
   height: 16px;
