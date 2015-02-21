@@ -30,15 +30,39 @@ var gotoTab = function(tab) {
 /////////////////////////
 
 var renderTabsToHtml = function(tabs, highlightedTabIndex) {
+
+  var emphasize = function(str, indices) {
+    var res = "";
+
+    var n = str.length;
+    var m = indices.length;
+
+    var start = 0;
+    for (var j = 0; j < m; j++) {
+      res += str.substring(start, indices[j][0]);
+      res += "<b>";
+      res += str.substring(indices[j][0], indices[j][1]);
+      res += "</b>";
+      start = indices[j][1];
+    }
+    res += str.substring(start, n);
+
+    return res;
+  };
+
   var n = tabs.length;
 
   var listHtml = "";
   for (var i = 0; i < n; i++) {
+    var tab = tabs[i].tab;
+    var titleIndices = tabs[i].titleIndices;
+    var urlIndices = tabs[i].urlIndices;
+
     listHtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
-    listHtml += "<img src='" + tabs[i].favIconUrl + "' class='favicon' />";
-    listHtml += "<span class='title'>" + tabs[i].title + "</span>";
+    listHtml += "<img src='" + tab.favIconUrl + "' class='favicon' />";
+    listHtml += "<span class='title'>" + emphasize(tab.title, titleIndices) + "</span>";
     listHtml += "<br />";
-    listHtml += "<span class='url'>" + tabs[i].url + "</span>";
+    listHtml += "<span class='url'>" + emphasize(tab.url, urlIndices) + "</span>";
     listHtml += "</div>";
   }
 
@@ -46,7 +70,7 @@ var renderTabsToHtml = function(tabs, highlightedTabIndex) {
 };
 
 var refreshView = function() {
-  displayTabsHtml(renderTabsToHtml(tabsToDisplay, highlightedTabIndex));
+  displayTabsHtml(renderTabsToHtml(model.tabsToDisplay, model.highlightedTabIndex));
 };
 
 
@@ -67,38 +91,38 @@ var model = {
   highlightedTabIndex: 0,
 
   isValidIndex: function(index) {
-    return 0 <= index && index < tabsToDisplay.length;
+    return 0 <= index && index < this.tabsToDisplay.length;
   },
 
   // public
 
   hasTabs: function() {
-    return tabsToDisplay.length > 0;
+    return this.tabsToDisplay.length > 0;
   },
 
   setTabsToDisplay: function(tabs) {
-    tabsToDisplay = tabs;
-    highlightedTabIndex = 0;
+    this.tabsToDisplay = tabs;
+    this.highlightedTabIndex = 0;
     refreshView();
   },
 
   decrementIndexIfPossible: function() {
-    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex - 1)) {
-      highlightedTabIndex--;
+    if (this.hasTabs() && this.isValidIndex(this.highlightedTabIndex - 1)) {
+      this.highlightedTabIndex--;
       refreshView();
     }
   },
 
   incrementIndexIfPossible: function() {
-    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex + 1)) {
-      highlightedTabIndex++;
+    if (this.hasTabs() && this.isValidIndex(this.highlightedTabIndex + 1)) {
+      this.highlightedTabIndex++;
       refreshView();
     }
   },
 
   getHighlightedTab: function() {
-    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex)) {
-      return tabsToDisplay[highlightedTabIndex];
+    if (this.hasTabs() && this.isValidIndex(this.highlightedTabIndex)) {
+      return this.tabsToDisplay[this.highlightedTabIndex];
     }
   },
 };
@@ -122,21 +146,53 @@ var asyncGetTabs = function(processTabs) {
   chrome.tabs.query(queryInfo, processTabs);
 };
 
+var createTabWithIndices = function(tab, titleIndices, urlIndices) {
+  return {
+    "tab": tab,
+    "titleIndices": titleIndices,
+    "urlIndices": urlIndices,
+  };
+};
+
+var addEmptyIndices = function(tabs) {
+  return tabs.map(function(tab) {
+    return createTabWithIndices(tab, [[0, 0]], [[0, 0]]);
+  });
+};
+
 var filterTabs = function(tabs, query) {
-  var containsCaseInsensitive = function(substring) {
-    var lowercaseSubstr = substring.toLowerCase();
+  var indicesCaseInsensitive = function(substring) {
+    // Workaround for empty search term
+    if (substring.length == 0) {
+      return function(string) {
+        return [[0, 0]];
+      };
+    }
+
+    substring = substring.toLowerCase();
     return function(string) {
-      return string.toLowerCase().indexOf(lowercaseSubstr) != -1;
+      string = string.toLowerCase();
+      var start = 0, m = substring.length;
+      var index, indices = [];
+      while ((index = string.indexOf(substring, start)) > -1) {
+        indices.push([index, index + m]);
+        start = index + m;
+      }
+      return indices;
     };
   };
+  var indicesOfQuery = indicesCaseInsensitive(query);
 
-  var containsQuery = containsCaseInsensitive(query);
+  var tabsWithIndices = tabs.map(function(tab) {
+    return createTabWithIndices(tab, indicesOfQuery(tab.title), indicesOfQuery(tab.url));
+  });
 
-  var predicate = function(tab) {
-    return containsQuery(tab.title) || containsQuery(tab.url);
+  var predicate = function(twi) {
+    return twi.titleIndices.length > 0 || twi.urlIndices.length > 0;
   };
 
-  return tabs.filter(predicate);
+  // console.log(tabsWithIndices);
+  return tabsWithIndices.filter(predicate);
 };
 
 /////////////////////////
@@ -175,7 +231,7 @@ var wireInput = function(tabs) {
 
   var processEnter = function(event) {
     if (model.hasTabs()) {
-      gotoTab(model.getHighlightedTab());
+      gotoTab(model.getHighlightedTab().tab);
     }
   };
 
@@ -216,7 +272,7 @@ var wireInput = function(tabs) {
 };
 
 var processTabs = function(allTabs) {
-  model.setTabsToDisplay(allTabs);
+  model.setTabsToDisplay(addEmptyIndices(allTabs));
 
   wireInput(allTabs);
 
