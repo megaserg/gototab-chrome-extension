@@ -16,8 +16,18 @@ var setFocusOnInput = function() {
   getSearchInput().focus();
 };
 
-var displayTabsHtml = function(html) {
-  getTabListDiv().innerHTML = html;
+var displayTabList = function(tabDivs) {
+  var list = getTabListDiv();
+
+  // remove old items
+  while (list.firstChild) {
+    list.removeChild(list.firstChild);
+  }
+
+  // add new items
+  for (var i in tabDivs) {
+    list.appendChild(tabDivs[i]);
+  }
 };
 
 var gotoTab = function(tab) {
@@ -29,24 +39,72 @@ var gotoTab = function(tab) {
 // View helpers
 /////////////////////////
 
-var renderTabsToHtml = function(tabs, highlightedTabIndex) {
+var renderTabs = function(tabs, highlightedTabIndex) {
+
+  var emphasize = function(str, indices) {
+    var res = "";
+
+    var n = str.length;
+    var m = indices.length;
+
+    var start = 0;
+    for (var j = 0; j < m; j++) {
+      res += str.substring(start, indices[j][0]);
+      res += "<b>";
+      res += str.substring(indices[j][0], indices[j][1]);
+      res += "</b>";
+      start = indices[j][1];
+    }
+    res += str.substring(start, n);
+
+    return res;
+  };
+
   var n = tabs.length;
 
-  var listHtml = "";
+  var divList = [];
   for (var i = 0; i < n; i++) {
-    listHtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
-    listHtml += "<img src='" + tabs[i].favIconUrl + "' class='favicon' />";
-    listHtml += "<span class='title'>" + tabs[i].title + "</span>";
-    listHtml += "<br />";
-    listHtml += "<span class='url'>" + tabs[i].url + "</span>";
-    listHtml += "</div>";
+    var tab = tabs[i].tab;
+    var titleIndices = tabs[i].titleIndices;
+    var urlIndices = tabs[i].urlIndices;
+
+    var div = document.createElement("div");
+    if (i == highlightedTabIndex) {
+      div.classList.add("highlighted");
+    }
+
+    var favicon = document.createElement("img");
+    favicon.classList.add("favicon");
+    if (typeof(tab.favIconUrl) != "undefined") {
+      favicon.src = tab.favIconUrl;
+    }
+
+    var titleSpan = document.createElement("span");
+    titleSpan.classList.add("title");
+    titleSpan.innerHTML = emphasize(tab.title, titleIndices);
+
+    var br = document.createElement("br");
+
+    var urlSpan = document.createElement("span");
+    urlSpan.classList.add("url");
+    urlSpan.innerHTML = emphasize(tab.url, urlIndices);
+
+    div.appendChild(favicon);
+    div.appendChild(titleSpan);
+    div.appendChild(br);
+    div.appendChild(urlSpan);
+
+    divList.push(div);
   }
 
-  return listHtml;
+  return divList;
 };
 
 var refreshView = function() {
-  displayTabsHtml(renderTabsToHtml(tabsToDisplay, highlightedTabIndex));
+  displayTabList(
+    renderTabs(
+      model.getTabsToDisplay(),
+      model.getHighlightedTabIndex()));
 };
 
 
@@ -59,49 +117,60 @@ var refreshView = function() {
  * broadcast an event "I, model, have changed". Controller should listen
  * to this event and update view whenever it comes.
  */
-var model = {
-  // private
 
-  tabsToDisplay: [],
+function Model() {
 
-  highlightedTabIndex: 0,
+  // private fields
+  var that = this;
+  var tabsToDisplay = [];
+  var highlightedTabIndex = 0;
 
-  isValidIndex: function(index) {
+  // private methods
+  var isValidIndex = function(index) {
     return 0 <= index && index < tabsToDisplay.length;
-  },
+  };
 
-  // public
-
-  hasTabs: function() {
+  // privileged methods (public, but able to access private variables)
+  this.hasTabs = function() {
     return tabsToDisplay.length > 0;
-  },
+  };
 
-  setTabsToDisplay: function(tabs) {
+  this.getTabsToDisplay = function() {
+    return tabsToDisplay;
+  }
+
+  this.getHighlightedTabIndex = function() {
+    return highlightedTabIndex;
+  };
+
+  this.getHighlightedTab = function() {
+    if (this.hasTabs() && isValidIndex(highlightedTabIndex)) {
+      return tabsToDisplay[highlightedTabIndex];
+    }
+  };
+
+  this.setTabsToDisplay = function(tabs) {
     tabsToDisplay = tabs;
     highlightedTabIndex = 0;
     refreshView();
-  },
+  };
 
-  decrementIndexIfPossible: function() {
-    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex - 1)) {
+  this.decrementIndexIfPossible = function() {
+    if (this.hasTabs() && isValidIndex(highlightedTabIndex - 1)) {
       highlightedTabIndex--;
       refreshView();
     }
-  },
+  };
 
-  incrementIndexIfPossible: function() {
-    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex + 1)) {
+  this.incrementIndexIfPossible = function() {
+    if (this.hasTabs() && isValidIndex(highlightedTabIndex + 1)) {
       highlightedTabIndex++;
       refreshView();
     }
-  },
+  };
+}
 
-  getHighlightedTab: function() {
-    if (this.hasTabs() && this.isValidIndex(highlightedTabIndex)) {
-      return tabsToDisplay[highlightedTabIndex];
-    }
-  },
-};
+var model = new Model();
 
 /////////////////////////
 // Business logic
@@ -122,21 +191,53 @@ var asyncGetTabs = function(processTabs) {
   chrome.tabs.query(queryInfo, processTabs);
 };
 
+var createTabWithIndices = function(tab, titleIndices, urlIndices) {
+  return {
+    "tab": tab,
+    "titleIndices": titleIndices,
+    "urlIndices": urlIndices,
+  };
+};
+
+var addEmptyIndices = function(tabs) {
+  return tabs.map(function(tab) {
+    return createTabWithIndices(tab, [[0, 0]], [[0, 0]]);
+  });
+};
+
 var filterTabs = function(tabs, query) {
-  var containsCaseInsensitive = function(substring) {
-    var lowercaseSubstr = substring.toLowerCase();
+  var indicesCaseInsensitive = function(substring) {
+    // Workaround for empty search term
+    if (substring.length == 0) {
+      return function(string) {
+        return [[0, 0]];
+      };
+    }
+
+    substring = substring.toLowerCase();
     return function(string) {
-      return string.toLowerCase().indexOf(lowercaseSubstr) != -1;
+      string = string.toLowerCase();
+      var start = 0, m = substring.length;
+      var index, indices = [];
+      while ((index = string.indexOf(substring, start)) > -1) {
+        indices.push([index, index + m]);
+        start = index + m;
+      }
+      return indices;
     };
   };
+  var indicesOfQuery = indicesCaseInsensitive(query);
 
-  var containsQuery = containsCaseInsensitive(query);
+  var tabsWithIndices = tabs.map(function(tab) {
+    return createTabWithIndices(tab, indicesOfQuery(tab.title), indicesOfQuery(tab.url));
+  });
 
-  var predicate = function(tab) {
-    return containsQuery(tab.title) || containsQuery(tab.url);
+  var predicate = function(twi) {
+    return twi.titleIndices.length > 0 || twi.urlIndices.length > 0;
   };
 
-  return tabs.filter(predicate);
+  // console.log(tabsWithIndices);
+  return tabsWithIndices.filter(predicate);
 };
 
 /////////////////////////
@@ -175,7 +276,7 @@ var wireInput = function(tabs) {
 
   var processEnter = function(event) {
     if (model.hasTabs()) {
-      gotoTab(model.getHighlightedTab());
+      gotoTab(model.getHighlightedTab().tab);
     }
   };
 
@@ -216,7 +317,7 @@ var wireInput = function(tabs) {
 };
 
 var processTabs = function(allTabs) {
-  model.setTabsToDisplay(allTabs);
+  model.setTabsToDisplay(addEmptyIndices(allTabs));
 
   wireInput(allTabs);
 
