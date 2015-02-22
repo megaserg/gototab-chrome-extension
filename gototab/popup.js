@@ -236,7 +236,6 @@ var filterTabs = function(tabs, query) {
     return twi.titleIndices.length > 0 || twi.urlIndices.length > 0;
   };
 
-  // console.log(tabsWithIndices);
   return tabsWithIndices.filter(predicate);
 };
 
@@ -297,26 +296,26 @@ var wireInput = function(tabs) {
     };
   };
 
-  var processEdit = invokeByKeymap({
+  // For character keys, keyup should be used so that text field value is changed.
+  var onKeyUp = invokeByKeymap({
     13: null, // Enter key
     38: null, // Up arrow key
     40: null, // Down arrow key
     "default": processInput,
   });
 
-  var processFunctionalKeys = invokeByKeymap({
+  // For keys like Enter and arrows, keydown feels more responsive.
+  var onKeyDown = invokeByKeymap({
     13: processEnter, // Enter key
     38: processUpArrow, // Up arrow key
     40: processDownArrow, // Down arrow key
     "default": null,
   });
 
-  // For keys like Enter and arrows, keydown feels more responsive.
-  // For character keys, keyup should be used so that text field value is changed.
-  wireInputListeners(getSearchInput(), processFunctionalKeys, processEdit);
+  wireInputListeners(getSearchInput(), onKeyDown, onKeyUp);
 };
 
-var processTabs = function(allTabs) {
+var onTabsLoaded = function(allTabs) {
   model.setTabsToDisplay(addEmptyIndices(allTabs));
 
   wireInput(allTabs);
@@ -325,7 +324,7 @@ var processTabs = function(allTabs) {
 };
 
 var onContentLoaded = function() {
-  asyncGetTabs(processTabs);
+  asyncGetTabs(onTabsLoaded);
 };
 
 document.addEventListener("DOMContentLoaded", onContentLoaded);
