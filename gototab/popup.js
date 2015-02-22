@@ -16,8 +16,18 @@ var setFocusOnInput = function() {
   getSearchInput().focus();
 };
 
-var displayTabsHtml = function(html) {
-  getTabListDiv().innerHTML = html;
+var displayTabList = function(tabDivs) {
+  var list = getTabListDiv();
+
+  // remove old items
+  while (list.firstChild) {
+    list.removeChild(list.firstChild);
+  }
+
+  // add new items
+  for (var i in tabDivs) {
+    list.appendChild(tabDivs[i]);
+  }
 };
 
 var gotoTab = function(tab) {
@@ -29,7 +39,7 @@ var gotoTab = function(tab) {
 // View helpers
 /////////////////////////
 
-var renderTabsToHtml = function(tabs, highlightedTabIndex) {
+var renderTabs = function(tabs, highlightedTabIndex) {
 
   var emphasize = function(str, indices) {
     var res = "";
@@ -52,27 +62,47 @@ var renderTabsToHtml = function(tabs, highlightedTabIndex) {
 
   var n = tabs.length;
 
-  var listHtml = "";
+  var divList = [];
   for (var i = 0; i < n; i++) {
     var tab = tabs[i].tab;
     var titleIndices = tabs[i].titleIndices;
     var urlIndices = tabs[i].urlIndices;
 
-    listHtml += "<div" + (i == highlightedTabIndex ? " class='highlighted'" : "") + ">";
-    listHtml += "<img src='" + tab.favIconUrl + "' class='favicon' />";
-    listHtml += "<span class='title'>" + emphasize(tab.title, titleIndices) + "</span>";
-    listHtml += "<br />";
-    listHtml += "<span class='url'>" + emphasize(tab.url, urlIndices) + "</span>";
-    listHtml += "</div>";
+    var div = document.createElement("div");
+    if (i == highlightedTabIndex) {
+      div.classList.add("highlighted");
+    }
+
+    var favicon = document.createElement("img");
+    favicon.classList.add("favicon");
+    if (typeof(tab.favIconUrl) != "undefined") {
+      favicon.src = tab.favIconUrl;
+    }
+
+    var titleSpan = document.createElement("span");
+    titleSpan.classList.add("title");
+    titleSpan.innerHTML = emphasize(tab.title, titleIndices);
+
+    var br = document.createElement("br");
+
+    var urlSpan = document.createElement("span");
+    urlSpan.classList.add("url");
+    urlSpan.innerHTML = emphasize(tab.url, urlIndices);
+
+    div.appendChild(favicon);
+    div.appendChild(titleSpan);
+    div.appendChild(br);
+    div.appendChild(urlSpan);
+
+    divList.push(div);
   }
 
-  return listHtml;
+  return divList;
 };
 
 var refreshView = function() {
-  console.log("refresh");
-  displayTabsHtml(
-    renderTabsToHtml(
+  displayTabList(
+    renderTabs(
       model.getTabsToDisplay(),
       model.getHighlightedTabIndex()));
 };
@@ -122,7 +152,6 @@ function Model() {
   this.setTabsToDisplay = function(tabs) {
     tabsToDisplay = tabs;
     highlightedTabIndex = 0;
-    console.log("refresh?");
     refreshView();
   };
 
@@ -268,7 +297,12 @@ var wireInput = function(tabs) {
     };
   };
 
-  var processEdit = processInput;
+  var processEdit = invokeByKeymap({
+    13: null, // Enter key
+    38: null, // Up arrow key
+    40: null, // Down arrow key
+    "default": processInput,
+  });
 
   var processFunctionalKeys = invokeByKeymap({
     13: processEnter, // Enter key
