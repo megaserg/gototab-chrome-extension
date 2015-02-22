@@ -269,7 +269,7 @@ var wireInputListeners = function(input, processKeyDown, processKeyUp) {
 
 var getMapping = function(map, key) {
   var value = map[key];
-  if (typeof value == "undefined") {
+  if (typeof(value) == "undefined") {
     value = map["default"];
   }
   return value;
@@ -277,6 +277,8 @@ var getMapping = function(map, key) {
 
 // TODO: have "all tabs" in the model?
 var wireInput = function(tabs) {
+  var noop = function() {};
+
   var processInput = function(event) {
     var query = getSearchInput().value;
     model.setTabsToDisplay(filterTabs(tabs, query));
@@ -299,17 +301,15 @@ var wireInput = function(tabs) {
   var invokeByKeymap = function(keymap) {
     return function(event) {
       var handler = getMapping(keymap, event.keyCode);
-      if (handler) {
-        handler(event);
-      }
+      handler(event);
     };
   };
 
   // For character keys, keyup should be used so that text field value is changed.
   var onKeyUp = invokeByKeymap({
-    13: null, // Enter key
-    38: null, // Up arrow key
-    40: null, // Down arrow key
+    13: noop, // Enter key
+    38: noop, // Up arrow key
+    40: noop, // Down arrow key
     "default": processInput,
   });
 
@@ -318,7 +318,7 @@ var wireInput = function(tabs) {
     13: processEnter, // Enter key
     38: processUpArrow, // Up arrow key
     40: processDownArrow, // Down arrow key
-    "default": null,
+    "default": noop,
   });
 
   wireInputListeners(getSearchInput(), onKeyDown, onKeyUp);
