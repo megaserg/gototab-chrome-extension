@@ -70,7 +70,11 @@ var renderTabsToHtml = function(tabs, highlightedTabIndex) {
 };
 
 var refreshView = function() {
-  displayTabsHtml(renderTabsToHtml(model.tabsToDisplay, model.highlightedTabIndex));
+  console.log("refresh");
+  displayTabsHtml(
+    renderTabsToHtml(
+      model.getTabsToDisplay(),
+      model.getHighlightedTabIndex()));
 };
 
 
@@ -83,49 +87,61 @@ var refreshView = function() {
  * broadcast an event "I, model, have changed". Controller should listen
  * to this event and update view whenever it comes.
  */
-var model = {
-  // private
 
-  tabsToDisplay: [],
+function Model() {
 
-  highlightedTabIndex: 0,
+  // private fields
+  var that = this;
+  var tabsToDisplay = [];
+  var highlightedTabIndex = 0;
 
-  isValidIndex: function(index) {
-    return 0 <= index && index < this.tabsToDisplay.length;
-  },
+  // private methods
+  var isValidIndex = function(index) {
+    return 0 <= index && index < tabsToDisplay.length;
+  };
 
-  // public
+  // privileged methods (public, but able to access private variables)
+  this.hasTabs = function() {
+    return tabsToDisplay.length > 0;
+  };
 
-  hasTabs: function() {
-    return this.tabsToDisplay.length > 0;
-  },
+  this.getTabsToDisplay = function() {
+    return tabsToDisplay;
+  }
 
-  setTabsToDisplay: function(tabs) {
-    this.tabsToDisplay = tabs;
-    this.highlightedTabIndex = 0;
+  this.getHighlightedTabIndex = function() {
+    return highlightedTabIndex;
+  };
+
+  this.getHighlightedTab = function() {
+    if (this.hasTabs() && isValidIndex(highlightedTabIndex)) {
+      return tabsToDisplay[highlightedTabIndex];
+    }
+  };
+
+  this.setTabsToDisplay = function(tabs) {
+    tabsToDisplay = tabs;
+    highlightedTabIndex = 0;
+    console.log("refresh?");
     refreshView();
-  },
+  };
 
-  decrementIndexIfPossible: function() {
-    if (this.hasTabs() && this.isValidIndex(this.highlightedTabIndex - 1)) {
-      this.highlightedTabIndex--;
+  this.decrementIndexIfPossible = function() {
+    if (this.hasTabs() && isValidIndex(highlightedTabIndex - 1)) {
+      highlightedTabIndex--;
       refreshView();
     }
-  },
+  };
 
-  incrementIndexIfPossible: function() {
-    if (this.hasTabs() && this.isValidIndex(this.highlightedTabIndex + 1)) {
-      this.highlightedTabIndex++;
+  this.incrementIndexIfPossible = function() {
+    if (this.hasTabs() && isValidIndex(highlightedTabIndex + 1)) {
+      highlightedTabIndex++;
       refreshView();
     }
-  },
+  };
+}
 
-  getHighlightedTab: function() {
-    if (this.hasTabs() && this.isValidIndex(this.highlightedTabIndex)) {
-      return this.tabsToDisplay[this.highlightedTabIndex];
-    }
-  },
-};
+var model = new Model();
 
 /////////////////////////
 // Business logic
@@ -252,12 +268,7 @@ var wireInput = function(tabs) {
     };
   };
 
-  var processEdit = invokeByKeymap({
-    13: null, // Enter key
-    38: null, // Up arrow key
-    40: null, // Down arrow key
-    "default": processInput,
-  });
+  var processEdit = processInput;
 
   var processFunctionalKeys = invokeByKeymap({
     13: processEnter, // Enter key
