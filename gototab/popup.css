@@ -25,7 +25,7 @@ input.searchbox {
   max-height: 500px;
 }
 
-#tabListDiv > div {
+#tabListDiv > div.tabListItem {
   /* avoid an excessively wide item text */
   white-space: pre;
   text-overflow: ellipsis;
@@ -36,6 +36,9 @@ input.searchbox {
 
   /* small offset from the scrollbar */
   margin-right: 10px;
+
+  /* pointy cursor */
+  cursor: pointer;
 }
 
 #tabListDiv > div .title {

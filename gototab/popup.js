@@ -69,6 +69,19 @@ var renderTabs = function(tabs) {
     var urlIndices = tabs[i].urlIndices;
 
     var div = document.createElement("div");
+    div.classList.add("tabListItem");
+
+    div.addEventListener("mouseover", (function(index) {
+      return function(event) {
+        model.setHighlightedTabIndex(index);
+      }
+    })(i), false);
+
+    div.addEventListener("click", function(event) {
+      if (model.hasTabs()) {
+        gotoTab(model.getHighlightedTab().tab);
+      }
+    }, false);
 
     var favicon = document.createElement("img");
     favicon.classList.add("favicon");
@@ -165,6 +178,13 @@ function Model() {
     highlightedTabIndex = 0;
     refreshTabList();
     refreshHighlighting();
+  };
+
+  this.setHighlightedTabIndex = function(index) {
+    if (highlightedTabIndex != index) {
+      highlightedTabIndex = index;
+      refreshHighlighting();
+    }
   };
 
   this.decrementIndexIfPossible = function() {
