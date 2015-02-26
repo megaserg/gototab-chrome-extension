@@ -31,15 +31,13 @@
  */
 
 // missed definitions to make fuzzy search work in isolation.
-WebInspector = function() {}
-String = function() {}
 String.regexSpecialCharacters = function() { return"^[]{}()\\.^$*+?|-,"; }
 
 /**
  * @constructor
  * @param {string} query
  */
-WebInspector.FilePathScoreFunction = function(query)
+FuzzySearch = function(query)
 {
     this._query = query;
     this._queryUpperCase = query.toUpperCase();
@@ -53,7 +51,7 @@ WebInspector.FilePathScoreFunction = function(query)
  * @param {string} query
  * @return {!RegExp}
  */
-WebInspector.FilePathScoreFunction.filterRegex = function(query)
+FuzzySearch.filterRegex = function(query)
 {
     const toEscape = String.regexSpecialCharacters();
     var regexString = "";
@@ -68,7 +66,7 @@ WebInspector.FilePathScoreFunction.filterRegex = function(query)
     return new RegExp(regexString, "i");
 }
 
-WebInspector.FilePathScoreFunction.prototype = {
+FuzzySearch.prototype = {
     /**
      * @param {string} data
      * @param {?Array.<!Number>} matchIndexes

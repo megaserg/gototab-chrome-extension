@@ -232,18 +232,20 @@ var filterTabs = function(tabs, query) {
     return createTabWithIndices(tab, indicesOfQuery(tab.title), indicesOfQuery(tab.url));
   });
 
-  var scorer = new WebInspector.FilePathScoreFunction(query);
-  var filter = WebInspector.FilePathScoreFunction.filterRegex(query);
+  var scorer = new FuzzySearch(query);
+  var filter = FuzzySearch.filterRegex(query);
   
   var getScores = function(tab) {
-      return scorer.score(tab.title) + scorer.score(tab.url);
+      return Math.max(scorer.score(tab.title), scorer.score(tab.url));
   };
 
   var filterPredicate = function(tabWithIndex) {
     return filter.test(tabWithIndex.tab.title) || filter.test(tabWithIndex.tab.url);
   }
 
-  return tabsWithIndices.filter(filterPredicate).sort(function(a,b) { return getScores(b.tab) - getScores(a.tab); } );
+  return tabsWithIndices.filter(filterPredicate).sort(function(a, b) { 
+    return getScores(b.tab) - getScores(a.tab); 
+  });
 };
 
 /////////////////////////
