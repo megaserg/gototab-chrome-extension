@@ -39,7 +39,7 @@ var gotoTab = function(tab) {
 // View helpers
 /////////////////////////
 
-var renderTabs = function(tabs, highlightedTabIndex) {
+var renderTabs = function(tabs) {
 
   var emphasize = function(str, indices) {
     var res = "";
@@ -69,9 +69,6 @@ var renderTabs = function(tabs, highlightedTabIndex) {
     var urlIndices = tabs[i].urlIndices;
 
     var div = document.createElement("div");
-    if (i == highlightedTabIndex) {
-      div.classList.add("highlighted");
-    }
 
     var favicon = document.createElement("img");
     favicon.classList.add("favicon");
@@ -100,11 +97,25 @@ var renderTabs = function(tabs, highlightedTabIndex) {
   return divList;
 };
 
-var refreshView = function() {
+var refreshTabList = function() {
   displayTabList(
     renderTabs(
-      model.getTabsToDisplay(),
-      model.getHighlightedTabIndex()));
+      model.getTabsToDisplay()));
+};
+
+var refreshHighlighting = function() {
+  var highlightedTabIndex = model.getHighlightedTabIndex();
+
+  var tabList = getTabListDiv();
+  var tabDivs = tabList.childNodes;
+
+  for (var i = 0; i < tabDivs.length; i++) {
+    if (i == highlightedTabIndex) {
+      tabDivs[i].classList.add("highlighted");
+    } else {
+      tabDivs[i].classList.remove("highlighted");
+    }
+  }
 };
 
 
@@ -113,7 +124,7 @@ var refreshView = function() {
 /////////////////////////
 
 /*
- * TODO: ideally, model should not be calling refreshView, but rather
+ * TODO: ideally, model should not be calling refresh...(), but rather
  * broadcast an event "I, model, have changed". Controller should listen
  * to this event and update view whenever it comes.
  */
@@ -152,20 +163,21 @@ function Model() {
   this.setTabsToDisplay = function(tabs) {
     tabsToDisplay = tabs;
     highlightedTabIndex = 0;
-    refreshView();
+    refreshTabList();
+    refreshHighlighting();
   };
 
   this.decrementIndexIfPossible = function() {
     if (this.hasTabs() && isValidIndex(highlightedTabIndex - 1)) {
       highlightedTabIndex--;
-      refreshView();
+      refreshHighlighting();
     }
   };
 
   this.incrementIndexIfPossible = function() {
     if (this.hasTabs() && isValidIndex(highlightedTabIndex + 1)) {
       highlightedTabIndex++;
-      refreshView();
+      refreshHighlighting();
     }
   };
 }
