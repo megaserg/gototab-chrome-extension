@@ -7,7 +7,7 @@ Chrome extension analogous to Sublime/Atom Command Palette.
 - Click "Load unpacked extension..." and choose gototab directory
 
 ## Usage
-- Press <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> on Mac (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> on PC) to bring up the popup
+- Press <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> on Mac (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> on PC) to bring up the popup
 - Type the search term
 - (Optionally) Press <kbd>Up</kbd>/<kbd>Down</kbd> to move the highlighting
 - Press Enter. The highlighted tab should become active.
