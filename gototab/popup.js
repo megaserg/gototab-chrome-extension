@@ -234,17 +234,17 @@ var filterTabs = function(tabs, query) {
 
   var scorer = new FuzzySearch(query);
   var filter = FuzzySearch.filterRegex(query);
-  
+
   var getScores = function(tab) {
-      return Math.max(scorer.score(tab.title), scorer.score(tab.url));
+    return Math.max(scorer.score(tab.title), scorer.score(tab.url));
   };
 
   var filterPredicate = function(tabWithIndex) {
     return filter.test(tabWithIndex.tab.title) || filter.test(tabWithIndex.tab.url);
   }
 
-  return tabsWithIndices.filter(filterPredicate).sort(function(a, b) { 
-    return getScores(b.tab) - getScores(a.tab); 
+  return tabsWithIndices.filter(filterPredicate).sort(function(a, b) {
+    return getScores(b.tab) - getScores(a.tab);
   });
 };
 

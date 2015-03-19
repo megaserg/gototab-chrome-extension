@@ -1,4 +1,4 @@
-// this is a fork of https://code.google.com/p/chromium/codesearch#chromium/src/third_party/WebKit/Source/devtools/front_end/sources/FilePathScoreFunction.js
+// This is a fork of https://code.google.com/p/chromium/codesearch#chromium/src/third_party/WebKit/Source/devtools/front_end/sources/FilePathScoreFunction.js
 
 /*
  * Copyright (C) 2013 Google Inc. All rights reserved.
@@ -31,14 +31,15 @@
  */
 
 // missed definitions to make fuzzy search work in isolation.
-String.regexSpecialCharacters = function() { return"^[]{}()\\.^$*+?|-,"; }
+String.regexSpecialCharacters = function() {
+  return"^[]{}()\\.^$*+?|-,";
+}
 
 /**
  * @constructor
  * @param {string} query
  */
-FuzzySearch = function(query)
-{
+FuzzySearch = function(query) {
     this._query = query;
     this._queryUpperCase = query.toUpperCase();
     this._score = null;
@@ -51,8 +52,7 @@ FuzzySearch = function(query)
  * @param {string} query
  * @return {!RegExp}
  */
-FuzzySearch.filterRegex = function(query)
-{
+FuzzySearch.filterRegex = function(query) {
     const toEscape = String.regexSpecialCharacters();
     var regexString = "";
     for (var i = 0; i < query.length; ++i) {
@@ -72,8 +72,7 @@ FuzzySearch.prototype = {
      * @param {?Array.<!Number>} matchIndexes
      * @return {number}
      */
-    score: function(data, matchIndexes)
-    {
+    score: function(data, matchIndexes) {
         if (!data || !this._query)
             return 0;
         var n = this._query.length;
@@ -111,8 +110,7 @@ FuzzySearch.prototype = {
      * @param {number} j
      * @return {boolean}
      */
-    _testWordStart: function(data, j)
-    {
+    _testWordStart: function(data, j) {
         var prevChar = data.charAt(j - 1);
         return j === 0 || prevChar === "_" || prevChar === "-" || prevChar === "/" ||
             (data[j - 1] !== this._dataUpperCase[j - 1] && data[j] === this._dataUpperCase[j]);
@@ -124,8 +122,7 @@ FuzzySearch.prototype = {
      * @param {number} m
      * @param {!Array.<!Number>} out
      */
-    _restoreMatchIndexes: function(sequence, n, m, out)
-    {
+    _restoreMatchIndexes: function(sequence, n, m, out) {
         var i = n - 1, j = m - 1;
         while (i >= 0 && j >= 0) {
             switch (sequence[i * m + j]) {
@@ -149,8 +146,7 @@ FuzzySearch.prototype = {
      * @param {number} j
      * @return {number}
      */
-    _singleCharScore: function(query, data, i, j)
-    {
+    _singleCharScore: function(query, data, i, j) {
         var isWordStart = this._testWordStart(data, j);
         var isFileName = j > this._fileNameIndex;
         var isPathTokenStart = j === 0 || data[j - 1] === "/";
@@ -180,8 +176,7 @@ FuzzySearch.prototype = {
      * @param {number} sequenceLength
      * @return {number}
      */
-    _sequenceCharScore: function(query, data, i, j, sequenceLength)
-    {
+    _sequenceCharScore: function(query, data, i, j, sequenceLength) {
         var isFileName = j > this._fileNameIndex;
         var isPathTokenStart = j === 0 || data[j - 1] === "/";
         var score = 10;
@@ -201,8 +196,7 @@ FuzzySearch.prototype = {
      * @param {number} consecutiveMatch
      * @return {number}
      */
-    _match: function(query, data, i, j, consecutiveMatch)
-    {
+    _match: function(query, data, i, j, consecutiveMatch) {
         if (this._queryUpperCase[i] !== this._dataUpperCase[j])
             return 0;
 
