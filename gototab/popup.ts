@@ -1,4 +1,5 @@
 declare var chrome: any;
+declare var FuzzySearch: any;
 
 /////////////////////////
 // View functions
@@ -6,12 +7,16 @@ declare var chrome: any;
 
 // TODO: these functions should be inside one View object.
 
+var $ = function(id) {
+  return document.getElementById(id);
+}
+
 var getSearchInput = function() {
-  return document.getElementById("searchInput");
+  return <HTMLInputElement> document.getElementById("searchInput");
 };
 
 var getTabListDiv = function() {
-  return document.getElementById("tabListDiv");
+  return <HTMLDivElement> document.getElementById("tabListDiv");
 };
 
 var setFocusOnInput = function() {
@@ -35,6 +40,20 @@ var displayTabList = function(tabDivs) {
 var gotoTab = function(tab) {
   chrome.tabs.update(tab.id, {active: true});
   chrome.windows.update(tab.windowId, {focused: true});
+};
+
+var openUrl = function(url) {
+  chrome.tabs.create({
+    "url": url
+  }, function(tab) {});
+};
+
+var openHistory = function() {
+  openUrl("chrome://history");
+};
+
+var openDownloads = function() {
+  openUrl("chrome://downloads");
 };
 
 /////////////////////////
@@ -125,10 +144,11 @@ var refreshHighlighting = function() {
   var tabDivs = tabList.childNodes;
 
   for (var i = 0; i < tabDivs.length; i++) {
+    var tabDiv = <HTMLElement> tabDivs[i];
     if (i == highlightedTabIndex) {
-      tabDivs[i].classList.add("highlighted");
+      tabDiv.classList.add("highlighted");
     } else {
-      tabDivs[i].classList.remove("highlighted");
+      tabDiv.classList.remove("highlighted");
     }
   }
 };
@@ -367,6 +387,8 @@ var onTabsLoaded = function(allTabs) {
 };
 
 var onContentLoaded = function() {
+  $("historyButton").addEventListener("click", openHistory);
+  $("downloadsButton").addEventListener("click", openDownloads);
   asyncGetTabs(onTabsLoaded);
 };
 
