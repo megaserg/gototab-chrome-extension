@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/ua3dflj8o8q960os/branch/master?svg=true)](https://ci.appveyor.com/project/megaserg/gototab-chrome-extension/branch/master)
+
 # gototab
 Chrome extension analogous to Sublime/Atom Command Palette.
 
