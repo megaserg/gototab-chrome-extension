@@ -1,6 +1,12 @@
 declare var chrome: any;
 declare var FuzzySearch: any;
 
+interface Tab {
+  title: string;
+  url: string;
+  favIconUrl: string;
+}
+
 /////////////////////////
 // View functions
 /////////////////////////
@@ -15,25 +21,25 @@ var getSearchInput = function() {
   return <HTMLInputElement> document.getElementById("searchInput");
 };
 
-var getTabListDiv = function() {
-  return <HTMLDivElement> document.getElementById("tabListDiv");
+var getItemListsContainer = function() {
+  return <HTMLDivElement> document.getElementById("itemListsContainer");
 };
 
 var setFocusOnInput = function() {
   getSearchInput().focus();
 };
 
-var displayTabList = function(tabDivs) {
-  var list = getTabListDiv();
+var displayItemLists = function(itemDivLists: HTMLDivElement[]) {
+  var container = getItemListsContainer();
 
   // remove old items
-  while (list.firstChild) {
-    list.removeChild(list.firstChild);
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
   }
 
-  // add new items
-  for (var i in tabDivs) {
-    list.appendChild(tabDivs[i]);
+  for (var i in itemDivLists) {
+    var itemDivList = itemDivLists[i];
+    container.appendChild(itemDivList);
   }
 };
 
@@ -60,49 +66,49 @@ var openDownloads = function() {
 // View helpers
 /////////////////////////
 
-var renderTabs = function(tabs) {
+var emphasize = function(str, indices) {
+  var res = "";
 
-  var emphasize = function(str, indices) {
-    var res = "";
+  var n = str.length;
+  var m = indices.length;
 
-    var n = str.length;
-    var m = indices.length;
+  var start = 0;
+  for (var j = 0; j < m; j++) {
+    res += str.substring(start, indices[j][0]);
+    res += "<b>";
+    res += str.substring(indices[j][0], indices[j][1]);
+    res += "</b>";
+    start = indices[j][1];
+  }
+  res += str.substring(start, n);
 
-    var start = 0;
-    for (var j = 0; j < m; j++) {
-      res += str.substring(start, indices[j][0]);
-      res += "<b>";
-      res += str.substring(indices[j][0], indices[j][1]);
-      res += "</b>";
-      start = indices[j][1];
-    }
-    res += str.substring(start, n);
+  return res;
+};
 
-    return res;
-  };
 
-  var n = tabs.length;
+interface Item {}
 
-  var divList = [];
-  for (var i = 0; i < n; i++) {
-    var tab = tabs[i].tab;
-    var titleIndices = tabs[i].titleIndices;
-    var urlIndices = tabs[i].urlIndices;
+interface ItemView {
+  render(): HTMLDivElement;
+}
+
+class TabItem implements Item {
+  tab: Tab;
+  listIndex: number;
+  titleIndices: number[][];
+  urlIndices: number[][];
+}
+
+class TabItemView implements ItemView {
+  constructor(private item: TabItem) {}
+
+  render(): HTMLDivElement {
+    var tab = this.item.tab;
+    var index = this.item.listIndex;
+    var titleIndices = this.item.titleIndices;
+    var urlIndices = this.item.urlIndices;
 
     var div = document.createElement("div");
-    div.classList.add("tabListItem");
-
-    div.addEventListener("mouseover", (function(index) {
-      return function(event) {
-        model.setHighlightedTabIndex(index);
-      }
-    })(i), false);
-
-    div.addEventListener("click", function(event) {
-      if (model.hasTabs()) {
-        gotoTab(model.getHighlightedTab().tab);
-      }
-    }, false);
 
     var favicon = document.createElement("img");
     favicon.classList.add("favicon");
@@ -125,30 +131,95 @@ var renderTabs = function(tabs) {
     div.appendChild(br);
     div.appendChild(urlSpan);
 
-    divList.push(div);
+    return div;
   }
+}
 
-  return divList;
-};
+class ActionItem implements Item {
+  constructor(public name: string, public shortcut: string) {}
+}
+
+class ActionItemView implements ItemView {
+  constructor(private item: ActionItem) {}
+
+  render(): HTMLDivElement {
+    var div = document.createElement("div");
+
+    var actionNameSpan = document.createElement("span");
+    actionNameSpan.classList.add("title");
+    actionNameSpan.innerHTML = this.item.name + " " + this.item.shortcut;
+
+    div.appendChild(actionNameSpan);
+
+    return div;
+  }
+}
+
+function renderTabItems(items: TabItem[]): HTMLDivElement {
+  return new ItemListView(items.map((item) => new TabItemView(item))).render();
+}
+
+function renderActionItems(items: ActionItem[]): HTMLDivElement {
+  return new ItemListView(items.map((item) => new ActionItemView(item))).render();
+}
+
+class ItemListView {
+  constructor(public itemViews: ItemView[]) {}
+
+  render(): HTMLDivElement {
+    var n = this.itemViews.length;
+
+    var listDiv = document.createElement("div");
+    listDiv.classList.add("itemList");
+
+    for (var i = 0; i < n; i++) {
+
+      var itemDiv = this.itemViews[i].render();
+
+      itemDiv.classList.add("listItem");
+
+      itemDiv.addEventListener("mouseover", (function(index) {
+        return function(event) {
+          model.setHighlightedTabIndex(index);
+        }
+      })(i), false);
+
+      itemDiv.addEventListener("click", function(event) {
+        if (model.hasTabs()) {
+          gotoTab(model.getHighlightedTab().tab);
+        }
+      }, false);
+
+      listDiv.appendChild(itemDiv);
+    }
+    return listDiv;
+  }
+}
+
+// ==============================================
 
 var refreshTabList = function() {
-  displayTabList(
-    renderTabs(
-      model.getTabsToDisplay()));
+  var lists = [
+    renderTabItems(model.getTabsToDisplay()),
+    renderActionItems([new ActionItem("Open history", "Cmd+H")])
+  ];
+  displayItemLists(lists);
 };
 
 var refreshHighlighting = function() {
   var highlightedTabIndex = model.getHighlightedTabIndex();
 
-  var tabList = getTabListDiv();
-  var tabDivs = tabList.childNodes;
+  var listsContainer = getItemListsContainer();
+  var itemDivs = listsContainer.firstChild.childNodes;
 
-  for (var i = 0; i < tabDivs.length; i++) {
-    var tabDiv = <HTMLElement> tabDivs[i];
+  console.log(itemDivs);
+
+  for (var i = 0; i < itemDivs.length; i++) {
+    var itemDiv = <HTMLElement> itemDivs[i];
     if (i == highlightedTabIndex) {
-      tabDiv.classList.add("highlighted");
+      itemDiv.classList.add("highlighted");
     } else {
-      tabDiv.classList.remove("highlighted");
+      itemDiv.classList.remove("highlighted");
     }
   }
 };
@@ -387,8 +458,8 @@ var onTabsLoaded = function(allTabs) {
 };
 
 var onContentLoaded = function() {
-  $("historyButton").addEventListener("click", openHistory);
-  $("downloadsButton").addEventListener("click", openDownloads);
+  // $("historyButton").addEventListener("click", openHistory);
+  // $("downloadsButton").addEventListener("click", openDownloads);
   asyncGetTabs(onTabsLoaded);
 };
 
