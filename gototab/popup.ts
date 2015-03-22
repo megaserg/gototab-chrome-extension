@@ -111,6 +111,7 @@ class TabItemView implements ItemView {
     var urlIndices = this.item.urlIndices;
 
     var div = document.createElement("div");
+    div.classList.add("tabListItem");
 
     var favicon = document.createElement("img");
     favicon.classList.add("favicon");
@@ -119,13 +120,13 @@ class TabItemView implements ItemView {
     }
 
     var titleSpan = document.createElement("span");
-    titleSpan.classList.add("title");
+    titleSpan.classList.add("tabTitle");
     titleSpan.innerHTML = emphasize(tab.title, titleIndices);
 
     var br = document.createElement("br");
 
     var urlSpan = document.createElement("span");
-    urlSpan.classList.add("url");
+    urlSpan.classList.add("tabUrl");
     urlSpan.innerHTML = emphasize(tab.url, urlIndices);
 
     div.appendChild(favicon);
@@ -150,12 +151,23 @@ class ActionItemView implements ItemView {
 
   render(): HTMLDivElement {
     var div = document.createElement("div");
+    div.classList.add("actionListItem");
+
+    var favicon = document.createElement("img");
+    favicon.classList.add("favicon");
+    favicon.classList.add("actionIcon");
 
     var actionNameSpan = document.createElement("span");
-    actionNameSpan.classList.add("title");
-    actionNameSpan.innerHTML = this.item.name + " " + this.item.shortcut;
+    actionNameSpan.classList.add("actionTitle");
+    actionNameSpan.innerHTML = "Action: " + this.item.name;
 
+    var actionShortcutSpan = document.createElement("span");
+    actionShortcutSpan.classList.add("actionShortcut");
+    actionShortcutSpan.innerHTML = this.item.shortcut;
+
+    div.appendChild(favicon);
     div.appendChild(actionNameSpan);
+    div.appendChild(actionShortcutSpan);
 
     return div;
   }
@@ -163,8 +175,8 @@ class ActionItemView implements ItemView {
 
 // Item List View
 
-class ItemListView {
-  constructor(public itemViews: ItemView[]) {}
+class ItemListView<IV extends ItemView> {
+  constructor(public itemViews: IV[]) {}
 
   render(): HTMLDivElement {
     var n = this.itemViews.length;
@@ -179,13 +191,13 @@ class ItemListView {
 
       itemDiv.addEventListener("mouseover", (function(index) {
         return function(event) {
-          model.setHighlightedItemIndex(index);
+          tabItemList.setHighlightedItemIndex(index);
         }
       })(i), false);
 
       itemDiv.addEventListener("click", function(event) {
-        if (model.hasItems()) {
-          gotoTab(model.getHighlightedItem().tab);
+        if (tabItemList.hasItems()) {
+          gotoTab(tabItemList.getHighlightedItem().tab);
         }
       }, false);
 
@@ -195,27 +207,41 @@ class ItemListView {
   }
 }
 
-function renderTabItems(items: TabItem[]): HTMLDivElement {
-  return new ItemListView(items.map((item) => new TabItemView(item))).render();
+class ListContainerView {
+  constructor(
+    private tabItemListView: ItemListView<TabItemView>,
+    private actionItemListView: ItemListView<ActionItemView>) {}
+
+  render(): HTMLDivElement[] {
+    return [
+      this.tabItemListView.render(),
+      this.actionItemListView.render()
+    ];
+  }
 }
 
-function renderActionItems(items: ActionItem[]): HTMLDivElement {
-  return new ItemListView(items.map((item) => new ActionItemView(item))).render();
+function renderTabItems(items: TabItem[]): ItemListView<TabItemView> {
+  return new ItemListView(items.map((item) => new TabItemView(item)));
+}
+
+function renderActionItems(items: ActionItem[]): ItemListView<ActionItemView> {
+  return new ItemListView(items.map((item) => new ActionItemView(item)));
 }
 
 
 // ==============================================
 
 var refreshTabList = function() {
-  var lists = [
-    renderTabItems(model.getItemsToDisplay()),
-    renderActionItems([new ActionItem("Open history", "Cmd+H")])
-  ];
-  displayItemLists(lists);
+  displayItemLists(
+    new ListContainerView(
+      renderTabItems(tabItemList.getItemsToDisplay()),
+      renderActionItems([new ActionItem("Open history", "&#8984;+H")])
+    ).render()
+  );
 };
 
 var refreshHighlighting = function() {
-  var highlightedTabIndex = model.getHighlightedItemIndex();
+  var highlightedTabIndex = tabItemList.getHighlightedItemIndex();
 
   var listsContainer = getItemListsContainer();
   var itemDivs = listsContainer.firstChild.childNodes;
@@ -301,7 +327,7 @@ class ItemList<T extends Item> {
   }
 }
 
-var model = new ItemList<TabItem>();
+var tabItemList = new ItemList<TabItem>();
 
 /////////////////////////
 // Business logic
@@ -404,21 +430,21 @@ var wireInput = function(tabs) {
 
   var processInput = function(event) {
     var query = getSearchInput().value;
-    model.setDisplayedItems(filterTabs(tabs, query));
+    tabItemList.setDisplayedItems(filterTabs(tabs, query));
   };
 
   var processEnter = function(event) {
-    if (model.hasItems()) {
-      gotoTab(model.getHighlightedItem().tab);
+    if (tabItemList.hasItems()) {
+      gotoTab(tabItemList.getHighlightedItem().tab);
     }
   };
 
   var processUpArrow = function(event) {
-    model.decrementIndexIfPossible();
+    tabItemList.decrementIndexIfPossible();
   };
 
   var processDownArrow = function(event) {
-    model.incrementIndexIfPossible();
+    tabItemList.incrementIndexIfPossible();
   };
 
   var invokeByKeymap = function(keymap) {
@@ -448,7 +474,7 @@ var wireInput = function(tabs) {
 };
 
 var onTabsLoaded = function(allTabs) {
-  model.setDisplayedItems(addEmptyIndices(allTabs));
+  tabItemList.setDisplayedItems(addEmptyIndices(allTabs));
 
   wireInput(allTabs);
 
