@@ -85,6 +85,7 @@ var emphasize = function(str, indices) {
   return res;
 };
 
+// Interfaces
 
 interface Item {}
 
@@ -92,11 +93,13 @@ interface ItemView {
   render(): HTMLDivElement;
 }
 
+// Tab Item
+
 class TabItem implements Item {
-  tab: Tab;
-  listIndex: number;
-  titleIndices: number[][];
-  urlIndices: number[][];
+  constructor(
+    public tab: Tab,
+    public titleIndices: number[][],
+    public urlIndices: number[][]) {}
 }
 
 class TabItemView implements ItemView {
@@ -104,7 +107,6 @@ class TabItemView implements ItemView {
 
   render(): HTMLDivElement {
     var tab = this.item.tab;
-    var index = this.item.listIndex;
     var titleIndices = this.item.titleIndices;
     var urlIndices = this.item.urlIndices;
 
@@ -135,8 +137,12 @@ class TabItemView implements ItemView {
   }
 }
 
+// Action Item
+
 class ActionItem implements Item {
-  constructor(public name: string, public shortcut: string) {}
+  constructor(
+    public name: string,
+    public shortcut: string) {}
 }
 
 class ActionItemView implements ItemView {
@@ -155,13 +161,7 @@ class ActionItemView implements ItemView {
   }
 }
 
-function renderTabItems(items: TabItem[]): HTMLDivElement {
-  return new ItemListView(items.map((item) => new TabItemView(item))).render();
-}
-
-function renderActionItems(items: ActionItem[]): HTMLDivElement {
-  return new ItemListView(items.map((item) => new ActionItemView(item))).render();
-}
+// Item List View
 
 class ItemListView {
   constructor(public itemViews: ItemView[]) {}
@@ -175,18 +175,17 @@ class ItemListView {
     for (var i = 0; i < n; i++) {
 
       var itemDiv = this.itemViews[i].render();
-
       itemDiv.classList.add("listItem");
 
       itemDiv.addEventListener("mouseover", (function(index) {
         return function(event) {
-          model.setHighlightedTabIndex(index);
+          model.setHighlightedItemIndex(index);
         }
       })(i), false);
 
       itemDiv.addEventListener("click", function(event) {
-        if (model.hasTabs()) {
-          gotoTab(model.getHighlightedTab().tab);
+        if (model.hasItems()) {
+          gotoTab(model.getHighlightedItem().tab);
         }
       }, false);
 
@@ -196,18 +195,27 @@ class ItemListView {
   }
 }
 
+function renderTabItems(items: TabItem[]): HTMLDivElement {
+  return new ItemListView(items.map((item) => new TabItemView(item))).render();
+}
+
+function renderActionItems(items: ActionItem[]): HTMLDivElement {
+  return new ItemListView(items.map((item) => new ActionItemView(item))).render();
+}
+
+
 // ==============================================
 
 var refreshTabList = function() {
   var lists = [
-    renderTabItems(model.getTabsToDisplay()),
+    renderTabItems(model.getItemsToDisplay()),
     renderActionItems([new ActionItem("Open history", "Cmd+H")])
   ];
   displayItemLists(lists);
 };
 
 var refreshHighlighting = function() {
-  var highlightedTabIndex = model.getHighlightedTabIndex();
+  var highlightedTabIndex = model.getHighlightedItemIndex();
 
   var listsContainer = getItemListsContainer();
   var itemDivs = listsContainer.firstChild.childNodes;
@@ -235,67 +243,65 @@ var refreshHighlighting = function() {
  * to this event and update view whenever it comes.
  */
 
-function Model() {
+class ItemList<T extends Item> {
 
-  // private fields
-  var that = this;
-  var tabsToDisplay = [];
-  var highlightedTabIndex = 0;
+  private displayedItems: T[] = [];
+  private highlightedItemIndex = 0;
 
   // private methods
-  var isValidIndex = function(index) {
-    return 0 <= index && index < tabsToDisplay.length;
-  };
-
-  // privileged methods (public, but able to access private variables)
-  this.hasTabs = function() {
-    return tabsToDisplay.length > 0;
-  };
-
-  this.getTabsToDisplay = function() {
-    return tabsToDisplay;
+  private isValidIndex(index: number): boolean {
+    return 0 <= index && index < this.displayedItems.length;
   }
 
-  this.getHighlightedTabIndex = function() {
-    return highlightedTabIndex;
-  };
+  // privileged methods (public, but able to access private variables)
+  hasItems(): boolean {
+    return this.displayedItems.length > 0;
+  }
 
-  this.getHighlightedTab = function() {
-    if (this.hasTabs() && isValidIndex(highlightedTabIndex)) {
-      return tabsToDisplay[highlightedTabIndex];
+  getItemsToDisplay(): T[] {
+    return this.displayedItems;
+  }
+
+  getHighlightedItemIndex(): number {
+    return this.highlightedItemIndex;
+  }
+
+  getHighlightedItem(): T {
+    if (this.hasItems() && this.isValidIndex(this.highlightedItemIndex)) {
+      return this.displayedItems[this.highlightedItemIndex];
     }
-  };
+  }
 
-  this.setTabsToDisplay = function(tabs) {
-    tabsToDisplay = tabs;
-    highlightedTabIndex = 0;
+  setDisplayedItems(items: T[]): void {
+    this.displayedItems = items;
+    this.highlightedItemIndex = 0;
     refreshTabList();
     refreshHighlighting();
-  };
+  }
 
-  this.setHighlightedTabIndex = function(index) {
-    if (highlightedTabIndex != index) {
-      highlightedTabIndex = index;
+  setHighlightedItemIndex(index: number): void {
+    if (this.highlightedItemIndex != index) {
+      this.highlightedItemIndex = index;
       refreshHighlighting();
     }
-  };
+  }
 
-  this.decrementIndexIfPossible = function() {
-    if (this.hasTabs() && isValidIndex(highlightedTabIndex - 1)) {
-      highlightedTabIndex--;
+  decrementIndexIfPossible(): void {
+    if (this.hasItems() && this.isValidIndex(this.highlightedItemIndex - 1)) {
+      this.highlightedItemIndex--;
       refreshHighlighting();
     }
-  };
+  }
 
-  this.incrementIndexIfPossible = function() {
-    if (this.hasTabs() && isValidIndex(highlightedTabIndex + 1)) {
-      highlightedTabIndex++;
+  incrementIndexIfPossible(): void {
+    if (this.hasItems() && this.isValidIndex(this.highlightedItemIndex + 1)) {
+      this.highlightedItemIndex++;
       refreshHighlighting();
     }
-  };
+  }
 }
 
-var model = new Model();
+var model = new ItemList<TabItem>();
 
 /////////////////////////
 // Business logic
@@ -316,17 +322,9 @@ var asyncGetTabs = function(processTabs) {
   chrome.tabs.query(queryInfo, processTabs);
 };
 
-var createTabWithIndices = function(tab, titleIndices, urlIndices) {
-  return {
-    "tab": tab,
-    "titleIndices": titleIndices,
-    "urlIndices": urlIndices,
-  };
-};
-
 var addEmptyIndices = function(tabs) {
   return tabs.map(function(tab) {
-    return createTabWithIndices(tab, [[0, 0]], [[0, 0]]);
+    return new TabItem(tab, [[0, 0]], [[0, 0]]);
   });
 };
 
@@ -354,7 +352,7 @@ var filterTabs = function(tabs, query) {
   var indicesOfQuery = indicesCaseInsensitive(query);
 
   var tabsWithIndices = tabs.map(function(tab) {
-    return createTabWithIndices(tab, indicesOfQuery(tab.title), indicesOfQuery(tab.url));
+    return new TabItem(tab, indicesOfQuery(tab.title), indicesOfQuery(tab.url));
   });
 
   var scorer = new FuzzySearch(query);
@@ -406,12 +404,12 @@ var wireInput = function(tabs) {
 
   var processInput = function(event) {
     var query = getSearchInput().value;
-    model.setTabsToDisplay(filterTabs(tabs, query));
+    model.setDisplayedItems(filterTabs(tabs, query));
   };
 
   var processEnter = function(event) {
-    if (model.hasTabs()) {
-      gotoTab(model.getHighlightedTab().tab);
+    if (model.hasItems()) {
+      gotoTab(model.getHighlightedItem().tab);
     }
   };
 
@@ -450,7 +448,7 @@ var wireInput = function(tabs) {
 };
 
 var onTabsLoaded = function(allTabs) {
-  model.setTabsToDisplay(addEmptyIndices(allTabs));
+  model.setDisplayedItems(addEmptyIndices(allTabs));
 
   wireInput(allTabs);
 
@@ -458,8 +456,6 @@ var onTabsLoaded = function(allTabs) {
 };
 
 var onContentLoaded = function() {
-  // $("historyButton").addEventListener("click", openHistory);
-  // $("downloadsButton").addEventListener("click", openDownloads);
   asyncGetTabs(onTabsLoaded);
 };
 
