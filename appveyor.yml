@@ -1,4 +1,8 @@
 install:
   - npm install -g typescript
+  - npm install -g jasmine
 
 build_script: tsc .\gototab\popup.ts
+
+test_script:
+    - jasmine
