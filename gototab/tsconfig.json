@@ -13,6 +13,13 @@
         "!./node_modules/**/*.ts"
     ],
     "files": [
+        "./ChromeAPI.ts",
+        "./DocumentAPI.ts",
+        "./FuzzySearch.ts",
+        "./Model.ts",
+        "./PubSub.ts",
+        "./Render.ts",
+        "./Search.ts",
         "./popup.ts"
     ]
 }

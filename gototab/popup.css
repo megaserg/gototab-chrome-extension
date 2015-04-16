@@ -13,7 +13,7 @@ input.searchbox {
   outline: none;
 }
 
-#itemListsContainer {
+#containerWrapper {
   /* small offset from the input field */
   margin-top: 5px;
 
@@ -25,7 +25,7 @@ input.searchbox {
   max-height: 500px;
 }
 
-#itemListsContainer > div.itemList > div.listItem {
+div.itemList > div.listItem {
   /* avoid an excessively wide item text */
   white-space: pre;
   text-overflow: ellipsis;
@@ -44,26 +44,26 @@ input.searchbox {
   height: 40px;
 }
 
-#itemListsContainer > div.itemList > div.listItem .tabTitle {
+div.itemList > div.listItem .tabTitle {
   font-size: 80%;
   color: #000000;
 }
 
-#itemListsContainer > div.itemList > div.listItem .tabUrl {
+div.itemList > div.listItem .tabUrl {
   font-size: 60%;
   color: #444444;
   position: relative;
   left: 22px;
 }
 
-#itemListsContainer > div.itemList > div.listItem .actionTitle {
+div.itemList > div.listItem .commandTitle {
   font-size: 100%;
   color: #000000;
   position: relative;
   top: 10px;
 }
 
-#itemListsContainer > div.itemList > div.listItem .actionShortcut {
+div.itemList > div.listItem .commandShortcut {
   font-size: 100%;
   color: #444444;
   position: absolute;
@@ -71,7 +71,7 @@ input.searchbox {
   right: 10px;
 }
 
-#itemListsContainer > div.itemList > div.listItem.highlighted {
+div.itemList > div.listItem.highlighted {
   background-color: orange;
   color: white;
 }
@@ -85,7 +85,7 @@ img.favicon {
   margin-right: 4px;
 }
 
-img.favicon.actionIcon {
+img.favicon.commandIcon {
   background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAOCAYAAAAmL5yKAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAGbSURBVCiRfZI7a1RRFIW/te4Fk4sKFgYUhBRm0CBYWmlj4Qs7G7GwtvEf2KZQCyshWNhY2PkDbKZSbBwMGrAI0xgiI844EcUic7ZFzn0wPjZsOOy91tqPs4kIIgLjNeEh0Ktj8w70hIfGay0vW6DzwDIUK/zTihVgOWMzsVEvrhg/AI7+p4Njxg+huAY4IsgJ3xGO7EOg+gv5hPCkxhnfbwSE3wv/yslvUNz+U8D3hEedQlvAgiVdELwFDuShXop0c356oYuCZ+3OeArFVRvfSuhFB3tE6IOkXkOWzoroJxjn0B6kxyaul2m/+sFOrdOJdBeKM1J5Mm9/MTF7Dr5RgyJiLJWvHDFbN3Gq08Fx4KeJy8ASsGTiEjAyVMAUKCSVEXtP6g2fE/4qPDBeBw4Dq8JT4Smwmo/tkSj6wgEcag4pIt4AI8EgoX5E7EbEJmgDtLH/BqASMcjvRaC9RNAE+AR8n/+BjlUJtoBdYAGgbHNpO6EJzDoCadxlB1GBdyA+1x2UbVLvQDvAl6Yn9LErILQdzDaFXwf8APgNrRPhgTpK8EAAAAAASUVORK5CYII59f525cb8e155fa0e0aa46770a5e2395');
 }
 

@@ -11,12 +11,18 @@
 
     <!-- JS must be in separate files: see https://developer.chrome.com/extensions/contentSecurityPolicy -->
     <script type="text/javascript" src="FuzzySearch.js"></script>
+    <script type="text/javascript" src="ChromeAPI.js"></script>
+    <script type="text/javascript" src="DocumentAPI.js"></script>
+    <script type="text/javascript" src="PubSub.js"></script>
+    <script type="text/javascript" src="Model.js"></script>
+    <script type="text/javascript" src="Render.js"></script>
+    <script type="text/javascript" src="Search.js"></script>
     <script type="text/javascript" src="popup.js"></script>
   </head>
   <body>
     <div id="searchDiv">
       <input type="text" id="searchInput" class="searchbox" placeholder="What are you looking for?" />
     </div>
-    <div id="itemListsContainer"></div>
+    <div id="containerWrapper"></div>
   </body>
 </html>

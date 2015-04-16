@@ -30,49 +30,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// missed definitions to make fuzzy search work in isolation.
-String.regexSpecialCharacters = function() {
-  return"^[]{}()\\.^$*+?|-,";
-}
+module fuzzy {
+  // missed definitions to make fuzzy search work in isolation.
+  var regexSpecialCharacters = function() {
+    return "^[]{}()\\.^$*+?|-,";
+  };
 
-/**
- * @constructor
- * @param {string} query
- */
-FuzzySearch = function(query) {
-    this._query = query;
-    this._queryUpperCase = query.toUpperCase();
-    this._score = null;
-    this._sequence = null;
-    this._dataUpperCase = "";
-    this._fileNameIndex = 0;
-}
+  /**
+   * @constructor
+   * @param {string} query
+   */
+  export class FuzzySearch {
+    private _query;
+    private _queryUpperCase;
+    private _score = null;
+    private _sequence = null;
+    private _dataUpperCase = "";
+    private _fileNameIndex = 0;
 
-/**
- * @param {string} query
- * @return {!RegExp}
- */
-FuzzySearch.filterRegex = function(query) {
-    const toEscape = String.regexSpecialCharacters();
-    var regexString = "";
-    for (var i = 0; i < query.length; ++i) {
-        var c = query.charAt(i);
-        if (toEscape.indexOf(c) !== -1)
-            c = "\\" + c;
-        if (i)
-            regexString += "[^" + c + "]*";
-        regexString += c;
+    constructor(query: string) {
+      this._query = query;
+      this._queryUpperCase = query.toUpperCase();
     }
-    return new RegExp(regexString, "i");
-}
-
-FuzzySearch.prototype = {
     /**
      * @param {string} data
      * @param {?Array.<!Number>} matchIndexes
      * @return {number}
      */
-    score: function(data, matchIndexes) {
+    public score(data, matchIndexes) {
         if (!data || !this._query)
             return 0;
         var n = this._query.length;
@@ -103,18 +88,18 @@ FuzzySearch.prototype = {
         if (matchIndexes)
             this._restoreMatchIndexes(sequence, n, m, matchIndexes);
         return score[n * m - 1];
-    },
+    }
 
     /**
      * @param {string} data
      * @param {number} j
      * @return {boolean}
      */
-    _testWordStart: function(data, j) {
+    private _testWordStart(data, j) {
         var prevChar = data.charAt(j - 1);
         return j === 0 || prevChar === "_" || prevChar === "-" || prevChar === "/" ||
             (data[j - 1] !== this._dataUpperCase[j - 1] && data[j] === this._dataUpperCase[j]);
-    },
+    }
 
     /**
      * @param {!Int32Array} sequence
@@ -122,7 +107,7 @@ FuzzySearch.prototype = {
      * @param {number} m
      * @param {!Array.<!Number>} out
      */
-    _restoreMatchIndexes: function(sequence, n, m, out) {
+    private _restoreMatchIndexes(sequence, n, m, out) {
         var i = n - 1, j = m - 1;
         while (i >= 0 && j >= 0) {
             switch (sequence[i * m + j]) {
@@ -137,7 +122,7 @@ FuzzySearch.prototype = {
             }
         }
         out.reverse();
-    },
+    }
 
     /**
      * @param {string} query
@@ -146,7 +131,7 @@ FuzzySearch.prototype = {
      * @param {number} j
      * @return {number}
      */
-    _singleCharScore: function(query, data, i, j) {
+    private _singleCharScore(query, data, i, j) {
         var isWordStart = this._testWordStart(data, j);
         var isFileName = j > this._fileNameIndex;
         var isPathTokenStart = j === 0 || data[j - 1] === "/";
@@ -166,7 +151,7 @@ FuzzySearch.prototype = {
         if (isFileName && isWordStart)
             score += 3;
         return score;
-    },
+    }
 
     /**
      * @param {string} query
@@ -176,7 +161,7 @@ FuzzySearch.prototype = {
      * @param {number} sequenceLength
      * @return {number}
      */
-    _sequenceCharScore: function(query, data, i, j, sequenceLength) {
+    private _sequenceCharScore(query, data, i, j, sequenceLength) {
         var isFileName = j > this._fileNameIndex;
         var isPathTokenStart = j === 0 || data[j - 1] === "/";
         var score = 10;
@@ -186,7 +171,7 @@ FuzzySearch.prototype = {
             score += 5;
         score += sequenceLength * 4;
         return score;
-    },
+    }
 
     /**
      * @param {string} query
@@ -196,7 +181,7 @@ FuzzySearch.prototype = {
      * @param {number} consecutiveMatch
      * @return {number}
      */
-    _match: function(query, data, i, j, consecutiveMatch) {
+    private _match(query, data, i, j, consecutiveMatch) {
         if (this._queryUpperCase[i] !== this._dataUpperCase[j])
             return 0;
 
@@ -205,4 +190,23 @@ FuzzySearch.prototype = {
         else
             return this._sequenceCharScore(query, data, i, j - consecutiveMatch, consecutiveMatch);
     }
+  }
+
+  /**
+   * @param {string} query
+   * @return {!RegExp}
+   */
+  export var filterRegex = function(query: string): RegExp {
+      const toEscape = regexSpecialCharacters();
+      var regexString = "";
+      for (var i = 0; i < query.length; ++i) {
+          var c = query.charAt(i);
+          if (toEscape.indexOf(c) !== -1)
+              c = "\\" + c;
+          if (i)
+              regexString += "[^" + c + "]*";
+          regexString += c;
+      }
+      return new RegExp(regexString, "i");
+  }
 }
