@@ -2,10 +2,10 @@ install:
     - npm install -g typescript
     - npm install -g jasmine
 
-build_script: 
-    - ps: | 
+build_script:
+    - ps: |
         mkdir -force .\out > $null
-        tsc .\gototab\popup.ts
+        tsc --out .\out\gototab\FuzzySearch.js .\gototab\FuzzySearch.ts
 
 test_script:
     - jasmine
