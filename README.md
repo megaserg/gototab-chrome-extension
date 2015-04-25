@@ -1,6 +1,8 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/ua3dflj8o8q960os/branch/master?svg=true)](https://ci.appveyor.com/project/megaserg/gototab-chrome-extension/branch/master)
 
 # gototab
+
+[![Join the chat at https://gitter.im/megaserg/gototab-chrome-extension](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/megaserg/gototab-chrome-extension?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Chrome extension analogous to Sublime/Atom Command Palette.
 
 ## Install
