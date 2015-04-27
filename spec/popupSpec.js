@@ -1,6 +1,6 @@
 describe("FuzzySearch", function() {
 
-  var fuzzy = require('../out/gototab/FuzzySearch.js');
+  var fuzzy = require('../out/FuzzySearch.js');
 
   it("should be able to rank items", function() {
     console.log(fuzzy);

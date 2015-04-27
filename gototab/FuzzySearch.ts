@@ -30,183 +30,182 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-module fuzzy {
-  // missed definitions to make fuzzy search work in isolation.
-  var regexSpecialCharacters = function() {
-    return "^[]{}()\\.^$*+?|-,";
-  };
 
-  /**
-   * @constructor
-   * @param {string} query
-   */
-  export class FuzzySearch {
-    private _query;
-    private _queryUpperCase;
-    private _score = null;
-    private _sequence = null;
-    private _dataUpperCase = "";
-    private _fileNameIndex = 0;
+// missed definitions to make fuzzy search work in isolation.
+var regexSpecialCharacters = function() {
+  return "^[]{}()\\.^$*+?|-,";
+};
 
-    constructor(query: string) {
-      this._query = query;
-      this._queryUpperCase = query.toUpperCase();
-    }
-    /**
-     * @param {string} data
-     * @param {?Array.<!Number>} matchIndexes
-     * @return {number}
-     */
-    public score(data, matchIndexes) {
-        if (!data || !this._query)
-            return 0;
-        var n = this._query.length;
-        var m = data.length;
-        if (!this._score || this._score.length < n * m) {
-            this._score = new Int32Array(n * m * 2);
-            this._sequence = new Int32Array(n * m * 2);
-        }
-        var score = this._score;
-        var sequence = /** @type {!Int32Array} */ (this._sequence);
-        this._dataUpperCase = data.toUpperCase();
-        this._fileNameIndex = data.lastIndexOf("/");
-        for (var i = 0; i < n; ++i) {
-            for (var j = 0; j < m; ++j) {
-                var skipCharScore = j === 0 ? 0 : score[i * m + j - 1];
-                var prevCharScore = i === 0 || j === 0 ? 0 : score[(i - 1) * m + j - 1];
-                var consecutiveMatch = i === 0 || j === 0 ? 0 : sequence[(i - 1) * m + j - 1];
-                var pickCharScore = this._match(this._query, data, i, j, consecutiveMatch);
-                if (pickCharScore && prevCharScore + pickCharScore >= skipCharScore) {
-                    sequence[i * m + j] = consecutiveMatch + 1;
-                    score[i * m + j] = (prevCharScore + pickCharScore);
-                } else {
-                    sequence[i * m + j] = 0;
-                    score[i * m + j] = skipCharScore;
-                }
-            }
-        }
-        if (matchIndexes)
-            this._restoreMatchIndexes(sequence, n, m, matchIndexes);
-        return score[n * m - 1];
-    }
+/**
+ * @constructor
+ * @param {string} query
+ */
+export class FuzzySearch {
+  private _query;
+  private _queryUpperCase;
+  private _score = null;
+  private _sequence = null;
+  private _dataUpperCase = "";
+  private _fileNameIndex = 0;
 
-    /**
-     * @param {string} data
-     * @param {number} j
-     * @return {boolean}
-     */
-    private _testWordStart(data, j) {
-        var prevChar = data.charAt(j - 1);
-        return j === 0 || prevChar === "_" || prevChar === "-" || prevChar === "/" ||
-            (data[j - 1] !== this._dataUpperCase[j - 1] && data[j] === this._dataUpperCase[j]);
-    }
-
-    /**
-     * @param {!Int32Array} sequence
-     * @param {number} n
-     * @param {number} m
-     * @param {!Array.<!Number>} out
-     */
-    private _restoreMatchIndexes(sequence, n, m, out) {
-        var i = n - 1, j = m - 1;
-        while (i >= 0 && j >= 0) {
-            switch (sequence[i * m + j]) {
-            case 0:
-                --j;
-                break;
-            default:
-                out.push(j);
-                --i;
-                --j;
-                break;
-            }
-        }
-        out.reverse();
-    }
-
-    /**
-     * @param {string} query
-     * @param {string} data
-     * @param {number} i
-     * @param {number} j
-     * @return {number}
-     */
-    private _singleCharScore(query, data, i, j) {
-        var isWordStart = this._testWordStart(data, j);
-        var isFileName = j > this._fileNameIndex;
-        var isPathTokenStart = j === 0 || data[j - 1] === "/";
-        var isCapsMatch = query[i] === data[j] && query[i] == this._queryUpperCase[i];
-        var score = 10;
-        if (isPathTokenStart)
-            score += 4;
-        if (isWordStart)
-            score += 2;
-        if (isCapsMatch)
-            score += 6;
-        if (isFileName)
-            score += 4;
-        // promote the case of making the whole match in the filename
-        if (j === this._fileNameIndex + 1 && i === 0)
-            score += 5;
-        if (isFileName && isWordStart)
-            score += 3;
-        return score;
-    }
-
-    /**
-     * @param {string} query
-     * @param {string} data
-     * @param {number} i
-     * @param {number} j
-     * @param {number} sequenceLength
-     * @return {number}
-     */
-    private _sequenceCharScore(query, data, i, j, sequenceLength) {
-        var isFileName = j > this._fileNameIndex;
-        var isPathTokenStart = j === 0 || data[j - 1] === "/";
-        var score = 10;
-        if (isFileName)
-            score += 4;
-        if (isPathTokenStart)
-            score += 5;
-        score += sequenceLength * 4;
-        return score;
-    }
-
-    /**
-     * @param {string} query
-     * @param {string} data
-     * @param {number} i
-     * @param {number} j
-     * @param {number} consecutiveMatch
-     * @return {number}
-     */
-    private _match(query, data, i, j, consecutiveMatch) {
-        if (this._queryUpperCase[i] !== this._dataUpperCase[j])
-            return 0;
-
-        if (!consecutiveMatch)
-            return this._singleCharScore(query, data, i, j);
-        else
-            return this._sequenceCharScore(query, data, i, j - consecutiveMatch, consecutiveMatch);
-    }
+  constructor(query: string) {
+    this._query = query;
+    this._queryUpperCase = query.toUpperCase();
   }
-
   /**
-   * @param {string} query
-   * @return {!RegExp}
+   * @param {string} data
+   * @param {?Array.<!Number>} matchIndexes
+   * @return {number}
    */
-  export var filterRegex = function(query: string): RegExp {
-      const toEscape = regexSpecialCharacters();
-      var regexString = "";
-      for (var i = 0; i < query.length; ++i) {
-          var c = query.charAt(i);
-          if (toEscape.indexOf(c) !== -1)
-              c = "\\" + c;
-          if (i)
-              regexString += "[^" + c + "]*";
-          regexString += c;
+  public score(data, matchIndexes) {
+      if (!data || !this._query)
+          return 0;
+      var n = this._query.length;
+      var m = data.length;
+      if (!this._score || this._score.length < n * m) {
+          this._score = new Int32Array(n * m * 2);
+          this._sequence = new Int32Array(n * m * 2);
       }
-      return new RegExp(regexString, "i");
+      var score = this._score;
+      var sequence = /** @type {!Int32Array} */ (this._sequence);
+      this._dataUpperCase = data.toUpperCase();
+      this._fileNameIndex = data.lastIndexOf("/");
+      for (var i = 0; i < n; ++i) {
+          for (var j = 0; j < m; ++j) {
+              var skipCharScore = j === 0 ? 0 : score[i * m + j - 1];
+              var prevCharScore = i === 0 || j === 0 ? 0 : score[(i - 1) * m + j - 1];
+              var consecutiveMatch = i === 0 || j === 0 ? 0 : sequence[(i - 1) * m + j - 1];
+              var pickCharScore = this._match(this._query, data, i, j, consecutiveMatch);
+              if (pickCharScore && prevCharScore + pickCharScore >= skipCharScore) {
+                  sequence[i * m + j] = consecutiveMatch + 1;
+                  score[i * m + j] = (prevCharScore + pickCharScore);
+              } else {
+                  sequence[i * m + j] = 0;
+                  score[i * m + j] = skipCharScore;
+              }
+          }
+      }
+      if (matchIndexes)
+          this._restoreMatchIndexes(sequence, n, m, matchIndexes);
+      return score[n * m - 1];
   }
+
+  /**
+   * @param {string} data
+   * @param {number} j
+   * @return {boolean}
+   */
+  private _testWordStart(data, j) {
+      var prevChar = data.charAt(j - 1);
+      return j === 0 || prevChar === "_" || prevChar === "-" || prevChar === "/" ||
+          (data[j - 1] !== this._dataUpperCase[j - 1] && data[j] === this._dataUpperCase[j]);
+  }
+
+  /**
+   * @param {!Int32Array} sequence
+   * @param {number} n
+   * @param {number} m
+   * @param {!Array.<!Number>} out
+   */
+  private _restoreMatchIndexes(sequence, n, m, out) {
+      var i = n - 1, j = m - 1;
+      while (i >= 0 && j >= 0) {
+          switch (sequence[i * m + j]) {
+          case 0:
+              --j;
+              break;
+          default:
+              out.push(j);
+              --i;
+              --j;
+              break;
+          }
+      }
+      out.reverse();
+  }
+
+  /**
+   * @param {string} query
+   * @param {string} data
+   * @param {number} i
+   * @param {number} j
+   * @return {number}
+   */
+  private _singleCharScore(query, data, i, j) {
+      var isWordStart = this._testWordStart(data, j);
+      var isFileName = j > this._fileNameIndex;
+      var isPathTokenStart = j === 0 || data[j - 1] === "/";
+      var isCapsMatch = query[i] === data[j] && query[i] == this._queryUpperCase[i];
+      var score = 10;
+      if (isPathTokenStart)
+          score += 4;
+      if (isWordStart)
+          score += 2;
+      if (isCapsMatch)
+          score += 6;
+      if (isFileName)
+          score += 4;
+      // promote the case of making the whole match in the filename
+      if (j === this._fileNameIndex + 1 && i === 0)
+          score += 5;
+      if (isFileName && isWordStart)
+          score += 3;
+      return score;
+  }
+
+  /**
+   * @param {string} query
+   * @param {string} data
+   * @param {number} i
+   * @param {number} j
+   * @param {number} sequenceLength
+   * @return {number}
+   */
+  private _sequenceCharScore(query, data, i, j, sequenceLength) {
+      var isFileName = j > this._fileNameIndex;
+      var isPathTokenStart = j === 0 || data[j - 1] === "/";
+      var score = 10;
+      if (isFileName)
+          score += 4;
+      if (isPathTokenStart)
+          score += 5;
+      score += sequenceLength * 4;
+      return score;
+  }
+
+  /**
+   * @param {string} query
+   * @param {string} data
+   * @param {number} i
+   * @param {number} j
+   * @param {number} consecutiveMatch
+   * @return {number}
+   */
+  private _match(query, data, i, j, consecutiveMatch) {
+      if (this._queryUpperCase[i] !== this._dataUpperCase[j])
+          return 0;
+
+      if (!consecutiveMatch)
+          return this._singleCharScore(query, data, i, j);
+      else
+          return this._sequenceCharScore(query, data, i, j - consecutiveMatch, consecutiveMatch);
+  }
+}
+
+/**
+ * @param {string} query
+ * @return {!RegExp}
+ */
+export var filterRegex = function(query: string): RegExp {
+    const toEscape = regexSpecialCharacters();
+    var regexString = "";
+    for (var i = 0; i < query.length; ++i) {
+        var c = query.charAt(i);
+        if (toEscape.indexOf(c) !== -1)
+            c = "\\" + c;
+        if (i)
+            regexString += "[^" + c + "]*";
+        regexString += c;
+    }
+    return new RegExp(regexString, "i");
 }

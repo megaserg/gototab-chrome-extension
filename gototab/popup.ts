@@ -1,13 +1,15 @@
-/// <reference path="ChromeAPI.ts" />
-/// <reference path="DocumentAPI.ts" />
-/// <reference path="PubSub.ts" />
-/// <reference path="Model.ts" />
-/// <reference path="Search.ts" />
-/// <reference path="Render.ts" />
+import chromeApi = require("./ChromeAPI");
+import docApi = require("./DocumentAPI");
+import pubsub = require("./PubSub");
+import model = require("./Model");
+import search = require("./Search");
+import render = require("./Render");
 
 var ACTION_ITEMS = [
-    new model.CommandItem("Open history", "&#8984;+H", chromeApi.openHistory),
-    new model.CommandItem("Open downloads", "&#8679;+&#8984;+J", chromeApi.openDownloads),
+    new model.CommandItem("Open History", "Ctrl+H / &#8984;+Y", chromeApi.openHistory),
+    new model.CommandItem("Open Downloads", "Ctrl+J / &#8679;+&#8984;+J", chromeApi.openDownloads),
+    new model.CommandItem("Open Extensions", "[no shortcut]", chromeApi.openExtensions),
+    new model.CommandItem("Open Settings", "&#8984;+,", chromeApi.openSettings),
 ];
 
 var eventbus = new pubsub.EventBus();
@@ -142,7 +144,9 @@ var initializeWithTabs = function(chromeTabs: chromeApi.ChromeTab[]): void {
 };
 
 var fetchTabsAndInitialize = function(): void {
+  console.log("tabs");
   chromeApi.asyncGetTabs(initializeWithTabs);
 };
 
-docApi.executeOnload(fetchTabsAndInitialize);
+// docApi.executeOnload();
+fetchTabsAndInitialize();
