@@ -5,7 +5,7 @@ install:
 build_script:
     - ps: |
         mkdir -force .\out > $null
-        tsc --module commonjs --outDir .\out .\gototab\*.ts
+        tsc --module commonjs --outDir .\out .\gototab\FuzzySearch.ts
 
 test_script:
     - jasmine
