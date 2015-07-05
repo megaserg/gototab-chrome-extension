@@ -43,7 +43,6 @@ var obtainItem = function(itemListIndex: number, itemIndex: number): HTMLElement
   var wrapper = getWrapper();
   var itemListDivs = wrapper.firstChild.childNodes;
   var itemListDiv = <HTMLElement> itemListDivs[itemListIndex];
-  console.log(itemListIndex);
   var itemDivs = itemListDiv.childNodes;
   var itemDiv = <HTMLElement> itemDivs[itemIndex];
   return itemDiv;

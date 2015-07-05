@@ -144,7 +144,6 @@ var initializeWithTabs = function(chromeTabs: chromeApi.ChromeTab[]): void {
 };
 
 var fetchTabsAndInitialize = function(): void {
-  console.log("tabs");
   chromeApi.asyncGetTabs(initializeWithTabs);
 };
 

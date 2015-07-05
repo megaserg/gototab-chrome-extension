@@ -129,7 +129,7 @@ export class DisplayedItemListset {
     }
   }
 
-  public setItemList(itemListIndex:number, items: DisplayedItem[]): void {
+  public setItemList(itemListIndex: number, items: DisplayedItem[]): void {
     if (this.isValidItemListIndex(itemListIndex)) {
       this.displayedItemLists[itemListIndex].setDisplayedItems(items);
       this.emitItemListChanged();

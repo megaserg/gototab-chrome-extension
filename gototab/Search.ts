@@ -59,7 +59,6 @@ var filterItems = function<I extends model.Item, DI extends model.DisplayedItem>
 }
 
 export var filterTabItems = function(tabItems: model.TabItem[], query: string): model.DisplayedTabItem[] {
-
   var tabQueryMatcherProvider = function(matchRegex: RegExp) {
     return function(item: model.TabItem): boolean {
       return matchRegex.test(item.title) || matchRegex.test(item.url);

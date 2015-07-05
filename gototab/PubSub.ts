@@ -43,7 +43,6 @@ export class EventBus {
   }
 
   public publish(topic: string, ...args: any[]): void {
-    console.log(topic, args);
     for (var i in this.subscribers[topic]) {
       var callback = this.subscribers[topic][i];
       callback.apply(null, args);

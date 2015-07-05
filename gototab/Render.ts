@@ -27,7 +27,9 @@ var renderAttributedString = function(attrStr: model.AttributedString): string {
   return res;
 };
 
-class TabItemRenderer implements Renderer {
+interface ItemRenderer extends Renderer {}
+
+class TabItemRenderer implements ItemRenderer {
   constructor(private item: model.DisplayedTabItem) {}
 
   render(): HTMLDivElement {
@@ -59,7 +61,7 @@ class TabItemRenderer implements Renderer {
   }
 }
 
-class CommandItemRenderer implements Renderer {
+class CommandItemRenderer implements ItemRenderer {
   constructor(private item: model.DisplayedCommandItem) {}
 
   render(): HTMLDivElement {
@@ -118,18 +120,17 @@ class ClickCallbackFactory implements IndexedCallbackFactory {
   }
 }
 
-class ItemListRenderer<IR extends Renderer> implements Renderer {
+class ItemListRenderer implements Renderer {
   constructor(
-    private itemRenderers: IR[],
+    private itemRenderers: ItemRenderer[],
     private mouseoverCallbackFactory: IndexedCallbackFactory,
     private clickCallbackFactory: IndexedCallbackFactory) {}
 
   render(): HTMLDivElement {
-    var n = this.itemRenderers.length;
-
     var listDiv = document.createElement("div");
     listDiv.classList.add("itemList");
 
+    var n = this.itemRenderers.length;
     for (var i = 0; i < n; i++) {
       var itemDiv = this.itemRenderers[i].render();
       itemDiv.classList.add("listItem");
@@ -144,26 +145,26 @@ class ItemListRenderer<IR extends Renderer> implements Renderer {
 }
 
 class ListsetRenderer implements Renderer {
-  constructor(
-    private tabItemListRenderer: ItemListRenderer<TabItemRenderer>,
-    private commandItemListRenderer: ItemListRenderer<CommandItemRenderer>) {}
+  constructor(private itemListRenderers: ItemListRenderer[]) {}
 
   render(): HTMLDivElement {
     var listsetDiv = document.createElement("div");
     listsetDiv.classList.add("listContainer");
 
-    listsetDiv.appendChild(this.tabItemListRenderer.render());
-    listsetDiv.appendChild(this.commandItemListRenderer.render());
+    var n = this.itemListRenderers.length;
+    for (var i = 0; i < n; i++) {
+      listsetDiv.appendChild(this.itemListRenderers[i].render());
+    }
 
     return listsetDiv;
   }
 }
 
-function renderTabItems(items: model.DisplayedTabItem[]): TabItemRenderer[] {
+function tabItemRenderers(items: model.DisplayedTabItem[]): TabItemRenderer[] {
   return items.map((item) => new TabItemRenderer(item));
 }
 
-function renderCommandItems(items: model.DisplayedCommandItem[]): CommandItemRenderer[] {
+function commandItemRenderers(items: model.DisplayedCommandItem[]): CommandItemRenderer[] {
   return items.map((item) => new CommandItemRenderer(item));
 }
 
@@ -173,12 +174,14 @@ export function renderListset(
     eventbus: pubsub.EventBus): Renderer {
 
   return new ListsetRenderer(
-      new ItemListRenderer(
-          renderTabItems(tabItems),
-          new MouseoverCallbackFactory(0, eventbus),
-          new ClickCallbackFactory(0, eventbus)),
-      new ItemListRenderer(
-          renderCommandItems(commandItems),
-          new MouseoverCallbackFactory(1, eventbus),
-          new ClickCallbackFactory(1, eventbus)));
+      [
+        new ItemListRenderer(
+            tabItemRenderers(tabItems),
+            new MouseoverCallbackFactory(0, eventbus),
+            new ClickCallbackFactory(0, eventbus)),
+        new ItemListRenderer(
+            commandItemRenderers(commandItems),
+            new MouseoverCallbackFactory(1, eventbus),
+            new ClickCallbackFactory(1, eventbus))
+      ]);
 }
